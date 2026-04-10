@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>ELECTRE</title>
+<style>
+body {
+  font-family: Arial;
+  background: #f5f7fb;
+  margin: 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* Инструкция */
+.instructions {
+  background: #f1e9fd;
+  padding: 15px 20px;
+  border-radius: 12px;
+  margin: 0 auto 30px auto;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  max-width: 600px;
+}
+
+.instructions h2 {
+  text-align: center;
+}
+
+.instructions ul {
+  text-align: left;
+}
+
+/* Навигация */
+.nav {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.nav button {
+  margin: 5px;
+  padding: 10px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8d53eb, #c154ec);
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.nav button:hover {
+  transform: scale(1.05);
+}
+
+/* Карточка критерия */
+.criterion-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.criterion-title {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+/* Шкала */
+.scale {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 5px;
+}
+
+.scale button {
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.scale button:hover {
+  background: #e3f2fd;
+}
+
+.scale button.selected {
+  background: #8b45e7;
+  color: white;
+  border: none;
+}
+
+/* Кнопка */
+#submitBtn {
+  display: block;
+  margin: 30px auto;
+  padding: 14px 30px;
+  font-size: 16px;
+  background: linear-gradient(135deg, #5ebe37, #69ce25);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#submitBtn:hover {
+  transform: scale(1.05);
+}
+
+/* Результаты */
+.result-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  margin: 15px 0;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+.top1 {
+  border: 2px solid gold;
+  background: #fffbe6;
+}
+#editBtn, #restartBtn {
+            margin: 10px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #editBtn {
+            background: linear-gradient(135deg, #c76fe2, #db66b8);
+        }
+
+        #restartBtn {
+            background: linear-gradient(135deg, #9e9e9e, #616161);
+        }
+
+        #editBtn:hover, #restartBtn:hover {
+            transform: scale(1.05);
+        }
+</style>
+</head>
+<body>
+
+<div class="instructions">
+  <h2>Инструкция по заполнению</h2>
+  <p>
+    Оцените важность каждого критерия при выборе квартиры.
+    Чем выше значение, тем более значимым считается критерий.
+  </p>
+  <ul>
+    <li><b>1–3</b> — низкая важность</li>
+    <li><b>4–6</b> — средняя важность</li>
+    <li><b>7–9</b> — высокая важность</li>
+    <li><b>10</b> — максимальная важность</li>
+  </ul>
+  <p>После отправки веса автоматически нормализуются.</p>
+</div>
+
+<div class="nav">
+  <button onclick="location.href='/'">🏠 Главная</button>
+  <button onclick="location.href='/ahp'">🔄 AHP</button>
+  <button onclick="location.href='/ftopsis'">📊 FTOPSIS</button>
+  <button onclick="location.href='/electre'">⚡ ELECTRE</button>
+</div>
+
+<div class="container">
+  <h1>ELECTRE: Важность критериев</h1>
+  <div id="form"></div>
+  <button id="submitBtn" onclick="submitElectre()">Получить результат</button>
+  <div id="result"></div>
+</div>
+
+<script>
+const criteria = [
+    "Цена за м²",
+    "Площадь",
+    "Тип жилья",
+    "Расстояние до детского сада",
+    "Расстояние до школы",
+    "Детская поликлиника",
+    "Взрослая поликлиника",
+    "Кружки и секции",
+    "Экология",
+    "Транспорт"
+];
+
+const formDiv = document.getElementById("form");
+const resultDiv = document.getElementById("result");
+
+let weights = {};
+
+// Создание шкал
+criteria.forEach((criterion, index) => {
+    const card = document.createElement("div");
+    card.className = "criterion-card";
+
+    const title = document.createElement("div");
+    title.className = "criterion-title";
+    title.textContent = criterion;
+
+    const scale = document.createElement("div");
+    scale.className = "scale";
+
+    for (let k = 1; k <= 10; k++) {
+        const btn = document.createElement("button");
+        btn.textContent = k;
+
+        btn.onclick = () => {
+            weights[index] = k;
+            [...scale.children].forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+        };
+
+        scale.appendChild(btn);
+    }
+
+    card.appendChild(title);
+    card.appendChild(scale);
+    formDiv.appendChild(card);
+});
+
+// Отправка данных
+async function submitElectre() {
+    if (Object.keys(weights).length !== criteria.length) {
+        alert("Пожалуйста, оцените все критерии!");
+        return;
+    }
+
+    const weightsArray = criteria.map((_, i) => weights[i]);
+
+    const response = await fetch("/electre", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ weights: weightsArray })
+    });
+
+    const data = await response.json();
+    showResult(data);
+}
+
+// Отображение результатов
+function showResult(data) {
+    resultDiv.style.display = "block";
+
+    formDiv.style.display = "none";
+    document.querySelector(".instructions").style.display = "none";
+    document.getElementById("submitBtn").style.display = "none";
+
+    resultDiv.innerHTML = "<h2>Ядро Парето (наиболее предпочтительные квартиры)</h2>";
+
+    data.kernel.forEach((apt, index) => {
+        resultDiv.innerHTML += `
+            <div class="result-card ${index === 0 ? 'top1' : ''}">
+                <h3>${apt.name}</h3>
+                <p><b>Адрес:</b> ${apt.address}</p>
+                <a href="${apt.url}" target="_blank">Открыть объявление</a>
+            </div>
+        `;
+    });
+
+    resultDiv.innerHTML += `
+        <div style="text-align:center; margin-top:20px;">
+            <button onclick="editAnswers()" id="editBtn">✏️ Изменить ответы</button>
+            <button onclick="restartTest()" id="restartBtn">🔄 Пройти заново</button>
+        </div>
+    `;
+}
+
+function editAnswers() {
+    resultDiv.innerHTML = "";
+    resultDiv.style.display = "none";
+
+    formDiv.style.display = "block";
+    document.querySelector(".instructions").style.display = "block";
+    document.getElementById("submitBtn").style.display = "block";
+}
+
+function restartTest() {
+    weights = {};
+    location.reload();
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Выбор метода</title>
+<style>
+
+body {
+  font-family: Arial;
+  background: #f5f7fb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* расстояние между блоками */
+}
+
+.card {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  margin: 0 auto;
+  width: 500px;
+}
+
+button {
+  display: block;
+  width: 250px;
+  margin: 10px auto;
+  padding: 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: rgb(255, 255, 255);
+  background-color: #d267d6;
+}
+
+.ahp { background: #4CAF50; }
+.topsis { background: #2196F3; }
+.electre { background: #ff9800; }
+
+button:hover {
+  transform: scale(1.05);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Выбор метода оценки квартир</h1>
+
+  <div class="card">
+    <h2>AHP</h2>
+    <p>Метод парных сравнений для определения важности критериев</p>
+    <button onclick="location.href='/ahp'">Начать</button>
+  </div>
+
+  <div class="card">
+    <h2>FTOPSIS</h2>
+    <button onclick="location.href='/ftopsis'">Перейти</button>
+  </div>
+
+  <div class="card">
+    <h2>ELECTRE</h2>
+    <button onclick="location.href='/electre'">Перейти</button>
+  </div>
+</div>
+
+</body>
+</html>

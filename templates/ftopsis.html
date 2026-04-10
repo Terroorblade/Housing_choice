@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>FTOPSIS</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f7fb;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Навигация */
+        .nav {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #8d53eb, #c154ec);
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .nav button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Инструкция */
+        .instructions {
+            background: #f1e9fd;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 0 auto 30px auto;
+            max-width: 600px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .instructions h2 {
+            text-align: center;
+        }
+
+        .instructions ul {
+            margin: 10px auto;
+            text-align: left;
+        }
+
+        /* Карточка критерия */
+        .criterion-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .criterion-title {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        /* Шкала */
+        .scale {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+        }
+
+        .scale button {
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: bold;
+        }
+
+        .scale button:hover {
+            background: #e3f2fd;
+        }
+
+        .scale button.selected {
+            background: #8d53eb;
+            color: white;
+            border: none;
+        }
+
+        /* Кнопка отправки */
+        #submitBtn {
+            display: block;
+            margin: 30px auto;
+            padding: 14px 30px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #5ebe37, #69ce25);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #submitBtn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Результаты */
+        #result {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
+        .top1 {
+            border: 2px solid gold;
+            background: #fffbe6;
+        }
+
+        #editBtn, #restartBtn {
+            margin: 10px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #editBtn {
+            background: linear-gradient(135deg, #c76fe2, #db66b8);
+        }
+
+        #restartBtn {
+            background: linear-gradient(135deg, #9e9e9e, #616161);
+        }
+
+        #editBtn:hover, #restartBtn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Инструкция -->
+<div class="instructions">
+    <h2>Инструкция по заполнению</h2>
+    <p>
+        Оцените важность каждого критерия при выборе квартиры.
+        Чем выше значение, тем сильнее данный критерий влияет на итоговый результат.
+    </p>
+    <ul>
+        <li><b>1–3</b> — низкая важность</li>
+        <li><b>4–6</b> — средняя важность</li>
+        <li><b>7–9</b> — высокая важность</li>
+        <li><b>10</b> — максимальная важность</li>
+    </ul>
+    <p>
+        После отправки значения автоматически нормализуются, поэтому важна их
+        <b>относительная значимость</b>.
+        *Выберите значение важности критерия. Оно будет интерпретировано как наиболее вероятное значение треугольного нечёткого числа
+    </p>
+</div>
+
+<!-- Навигация -->
+<div class="nav">
+    <button onclick="location.href='/'">🏠 Главная</button>
+    <button onclick="location.href='/ahp'">🔄 AHP</button>
+    <button onclick="location.href='/ftopsis'">📊 FTOPSIS</button>
+    <button onclick="location.href='/electre'">⚡ ELECTRE</button>
+</div>
+
+
+<div class="container">
+    <h1>FTOPSIS: Важность критериев</h1>
+    <div id="form"></div>
+    <button id="submitBtn" onclick="submitFTOPSIS()">Получить рейтинг</button>
+    <div id="result"></div>
+</div>
+
+<script>
+const criteria = [
+    "Цена за м²",
+    "Площадь",
+    "Тип жилья",
+    "Расстояние до детского сада",
+    "Расстояние до школы",
+    "Детская поликлиника",
+    "Взрослая поликлиника",
+    "Кружки и секции",
+    "Экология",
+    "Транспорт"
+];
+
+const formDiv = document.getElementById("form");
+const resultDiv = document.getElementById("result");
+
+// Хранение ответов
+let answers = {};
+
+// Создание карточек критериев
+criteria.forEach((criterion, index) => {
+    const card = document.createElement("div");
+    card.className = "criterion-card";
+
+    const title = document.createElement("div");
+    title.className = "criterion-title";
+    title.textContent = criterion;
+    card.appendChild(title);
+
+    const scale = document.createElement("div");
+    scale.className = "scale";
+
+    for (let k = 1; k <= 10; k++) {
+        const btn = document.createElement("button");
+        btn.innerText = k;
+
+        btn.onclick = () => {
+            answers[index] = k;
+            [...scale.children].forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+        };
+
+        scale.appendChild(btn);
+    }
+
+    card.appendChild(scale);
+    formDiv.appendChild(card);
+});
+
+// Отправка данных
+async function submitFTOPSIS() {
+    const weights = criteria.map((_, i) => answers[i]);
+
+    if (weights.includes(undefined)) {
+        alert("Пожалуйста, оцените все критерии.");
+        return;
+    }
+
+    const response = await fetch("/ftopsis", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ weights })
+    });
+
+    const data = await response.json();
+    showResult(data);
+}
+
+// Отображение результатов
+function showResult(data) {
+    // Показ блока результатов
+    resultDiv.style.display = "block";
+
+    // Скрытие формы и инструкции
+    formDiv.style.display = "none";
+    document.querySelector(".instructions").style.display = "none";
+    document.getElementById("submitBtn").style.display = "none";
+
+    // Очистка предыдущих результатов
+    resultDiv.innerHTML = "<h2>Рейтинг квартир</h2>";
+
+    data.ranking.forEach((apt, index) => {
+        const isTop = index === 0 ? "top1" : "";
+        resultDiv.innerHTML += `
+            <div class="result-card ${isTop}">
+                <h3>${index + 1} место — ${apt.name}</h3>
+                <p><b>Адрес:</b> ${apt.address}</p>
+                <p><b>Оценка:</b> ${apt.score.toFixed(3)}</p>
+                <a href="${apt.url}" target="_blank">Открыть объявление</a>
+            </div>
+        `;
+    });
+
+    resultDiv.innerHTML += `
+        <div style="text-align:center; margin-top:20px;">
+            <button onclick="editAnswers()" id="editBtn">✏️ Изменить ответы</button>
+            <button onclick="restartTest()" id="restartBtn">🔄 Пройти заново</button>
+        </div>
+    `;
+}
+
+function editAnswers() {
+    // Очистка и отображение формы
+    resultDiv.innerHTML = "";
+    resultDiv.style.display = "none";
+
+    formDiv.style.display = "block";
+    document.querySelector(".instructions").style.display = "block";
+    document.getElementById("submitBtn").style.display = "block";
+}
+function restartTest() {
+    answers = {};
+    location.reload();
+}
+</script>
+
+</body>
+</html>

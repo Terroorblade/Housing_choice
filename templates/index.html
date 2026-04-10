@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>AHP опрос</title>
+ <style>
+
+body {
+  font-family: Arial;
+  background: #f5f7fb;
+  margin: 0;
+}
+
+/* главный контейнер */
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* карточка вопроса */
+.pair {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* текст по центру */
+.pair-title {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+/* шкала НА ВСЮ ШИРИНУ */
+.scale {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 5px;
+}
+
+/* кнопки */
+.scale button {
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  transition: 0.2s;
+  font-weight: bold;
+}
+
+/* hover */
+.scale button:hover {
+  background: #e3f2fd;
+}
+
+/* выбранное */
+.scale button.selected {
+  background: #8b45e7;
+  color: white;
+  border: none;
+}
+
+/* кнопка отправки */
+#submitBtn {
+  display: block;
+  margin: 30px auto;
+  padding: 14px 30px;
+  font-size: 16px;
+  background: linear-gradient(135deg, #5ebe37, #69ce25);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#submitBtn:hover {
+  transform: scale(1.05);
+}
+
+/* блок результатов */
+#result {
+  margin-top: 30px;
+  text-align: center;
+}
+
+/* карточка квартиры */
+.card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  margin: 15px 0;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+/* топ-1 */
+.top1 {
+  border: 2px solid gold;
+  background: #fffbe6;
+}
+
+/* кнопка редактирования */
+#editBtn {
+  margin-top: 25px;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #c76fe2, #db66b8);
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+  transition: 0.3s;
+}
+
+#editBtn:hover {
+  transform: scale(1.05);
+}
+
+
+.instructions {
+  background: #f1e9fd;
+  padding: 15px 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  
+}
+.instructions h2 {
+  text-align: center;
+}
+.instructions ul {
+  max-width: 600px;
+  margin: 10px auto;
+  text-align: left;
+}
+
+.nav {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.nav button {
+  margin: 5px;
+  padding: 10px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8d53eb, #c154ec);
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.nav button:hover {
+  transform: scale(1.05);
+}
+#restartBtn {
+  margin-bottom: 30px;
+  margin-left: 10px;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #9e9e9e, #616161);
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+#restartBtn:hover {
+  transform: scale(1.05);
+}
+
+.instructions {
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+}
+
+</style>
+</head>
+<body>
+
+
+
+<div class="instructions">
+  <h2>Инструкция по шкале Саати</h2>
+  <p>
+    Шкала от 1 до 9 показывает относительную важность критериев при сравнении:
+  </p>
+  <ul>
+    <li><b>1</b> — критерии равны по важности</li>
+    <li><b>3</b> — один критерий слегка важнее другого</li>
+    <li><b>5</b> — критерий заметно важнее</li>
+    <li><b>7</b> — критерий сильно важнее</li>
+    <li><b>9</b> — критерий крайне важнее</li>
+    <li>Числа 2, 4, 6, 8 — промежуточные значения</li>
+  </ul>
+  <p>Выберите значение, которое отражает насколько важнее <b>первый</b> критерий по сравнению со <b>вторым.</b></p>
+</div>
+
+
+<!-- <div class="nav">
+  <button onclick="location.href='index.html'">🏠 Главная</button>
+  <button onclick="location.href='ahp.html'">🔄 AHP</button>
+  <button onclick="location.href='topsis.html'">📊 TOPSIS</button>
+  <button onclick="location.href='electre.html'">⚡ ELECTRE</button>
+</div> -->
+
+<div class="nav">
+  <button onclick="location.href='/'">🏠 Главная</button>
+  <button onclick="location.href='/ahp'">🔄 AHP</button>
+  <button onclick="location.href='/ftopsis'">📊 FTOPSIS</button>
+  <button onclick="location.href='/electre'">⚡ ELECTRE</button>
+</div>
+
+<div class="container">
+
+<h1>AHP: парные сравнения</h1>
+
+<div id="form"></div>
+
+<button id="submitBtn" onclick="submitData()">Получить результат</button>
+
+<div id="result"></div>
+
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

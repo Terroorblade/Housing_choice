@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AHP</title>
+</head>
+<body>
+
+<h1>AHP — парные сравнения</h1>
+
+<button onclick="sendTest()">Тест AHP</button>
+
+<pre id="result"></pre>
+
+<script>
+async function sendTest() {
+    const response = await fetch("/ahp", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            matrix: [
+                [1, 3, 5],
+                [1/3, 1, 2],
+                [1/5, 1/2, 1]
+            ]
+        })
+    });
+
+    const data = await response.json();
+    document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+}
+</script>
+
+</body>
+</html>
