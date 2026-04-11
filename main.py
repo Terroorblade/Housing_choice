@@ -3,13 +3,14 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import numpy as np
-from models.ahp import ahp as ahp_calc, consistency_ratio
+from models.ahp import ahp as ahp_calc, consistency_ratio, find_most_inconsistent_triplet
 from models.ftopsis import ftopsis
 from models.electre import electre
 from data.apartments import apartments
 from fastapi.staticfiles import StaticFiles
 from models.ahp import consistency_ratio
 from pydantic import BaseModel
+from data.criteria import criteria_names
 
 
 templates = Jinja2Templates(directory="templates")
@@ -50,6 +51,12 @@ async def home(request: Request):
 def to_fuzzy(value):
     return (value * 0.9, value, value * 1.1)
 
+# либо иcпользоватьт фикс диапазон с ограничением справа слева границ 1 и 10
+# def to_fuzzy(value, delta=1):
+#     return (max(1, value - delta), value, min(10, value + delta))
+
+
+
 @app.get("/ahp", response_class=HTMLResponse)
 async def ahp_page(request: Request):
     return templates.TemplateResponse(
@@ -61,14 +68,10 @@ async def ahp_page(request: Request):
 
 @app.post("/ahp")
 def ahp_endpoint(data: AHPRequest):
-    A = np.array(data.matrix)
+    A = np.array(data.matrix, dtype=float)
 
     # --- Расчёт весов ---
-    eigenvalues, eigenvectors = np.linalg.eig(A)
-    max_index = np.argmax(eigenvalues.real)
-    lambda_max = eigenvalues[max_index].real
-    weights = eigenvectors[:, max_index].real
-    weights = weights / np.sum(weights)
+    weights, lambda_max = ahp_calc(A)
 
     # --- Расчёт коэффициента согласованности ---
     cr = consistency_ratio(A, lambda_max)
@@ -92,21 +95,19 @@ def ahp_endpoint(data: AHPRequest):
 
     matrix = np.array(matrix, dtype=float)
 
-    # --- Правильная нормализация ---
-    # Для критериев "затрат" (меньше — лучше)
-    cost_indices = [0, 3, 4, 5, 6]
-    # Для критериев "выгоды" (больше — лучше)
-    benefit_indices = [1, 2, 7, 8, 9]
+    # --- Индексы критериев ---
+    cost_indices = [0, 3, 4, 5, 6]      # меньше — лучше
+    benefit_indices = [1, 2, 7, 8, 9]   # больше — лучше
 
+    # --- Нормализация ---
     norm_matrix = np.zeros_like(matrix, dtype=float)
-
     for i in range(matrix.shape[1]):
         if i in cost_indices:
             norm_matrix[:, i] = np.min(matrix[:, i]) / matrix[:, i]
         else:
             norm_matrix[:, i] = matrix[:, i] / np.max(matrix[:, i])
 
-    # --- Итоговые оценки ---
+    # --- Итоговые оценки альтернатив ---
     scores = norm_matrix @ weights
     ranking = np.argsort(scores)[::-1]
 
@@ -119,11 +120,90 @@ def ahp_endpoint(data: AHPRequest):
             "url": apartments[i]["url"]
         })
 
-    return {
+    # --- Формирование ответа ---
+    response = {
         "weights": weights.tolist(),
         "CR": float(cr),
         "ranking": result
     }
+
+    # --- Добавление уточняющего вопроса ---
+    if cr >= 0.1:
+        i, j, k = find_most_inconsistent_triplet(A)
+        response["clarification"] = {
+            "criterion1": criteria_names[i],
+            "criterion2": criteria_names[k],
+            "index_i": i,
+            "index_k": k
+        }
+
+    return response
+
+# @app.post("/ahp")
+# def ahp_endpoint(data: AHPRequest):
+#     A = np.array(data.matrix)
+
+#     # --- Расчёт весов ---
+#     eigenvalues, eigenvectors = np.linalg.eig(A)
+#     max_index = np.argmax(eigenvalues.real)
+#     lambda_max = eigenvalues[max_index].real
+#     weights = eigenvectors[:, max_index].real
+#     weights = weights / np.sum(weights)
+
+#     # --- Расчёт коэффициента согласованности ---
+#     cr = consistency_ratio(A, lambda_max)
+
+#     # --- Формирование матрицы критериев квартир ---
+#     matrix = []
+#     for apt in apartments:
+#         row = [
+#             apt["price_sqm"],
+#             apt["area"],
+#             apt["housing_type"],
+#             apt["dist_kindergarten"],
+#             apt["dist_school"],
+#             apt["dist_clinic_child"],
+#             apt["dist_clinic_adult"],
+#             apt["sections"],
+#             apt["ecology"],
+#             apt["transport"]
+#         ]
+#         matrix.append(row)
+
+#     matrix = np.array(matrix, dtype=float)
+
+#     # --- Правильная нормализация ---
+#     # Для критериев "затрат" (меньше — лучше)
+#     cost_indices = [0, 3, 4, 5, 6]
+#     # Для критериев "выгоды" (больше — лучше)
+#     benefit_indices = [1, 2, 7, 8, 9]
+
+#     norm_matrix = np.zeros_like(matrix, dtype=float)
+
+#     for i in range(matrix.shape[1]):
+#         if i in cost_indices:
+#             norm_matrix[:, i] = np.min(matrix[:, i]) / matrix[:, i]
+#         else:
+#             norm_matrix[:, i] = matrix[:, i] / np.max(matrix[:, i])
+
+#     # --- Итоговые оценки ---
+#     scores = norm_matrix @ weights
+#     ranking = np.argsort(scores)[::-1]
+
+#     result = []
+#     for i in ranking:
+#         result.append({
+#             "name": apartments[i]["name"],
+#             "score": float(scores[i]),
+#             "address": apartments[i]["address"],
+#             "url": apartments[i]["url"]
+#         })
+
+#     return {
+#         "weights": weights.tolist(),
+#         "CR": float(cr),
+#         "ranking": result
+#     }
 
 
 @app.get("/ftopsis", response_class=HTMLResponse)

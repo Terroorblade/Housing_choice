@@ -148,64 +148,185 @@ function restartTest() {
     location.reload();
 }
 
-function showResult(data) {
 
+function clarifyPreference(i, k, value) {
+    // Обновляем соответствующий элемент матрицы парных сравнений
+    const n = criteria.length;
+
+    // Определяем индекс пары (i, k)
+    let pairIndex = 0;
+    for (let a = 0; a < n; a++) {
+        for (let b = a + 1; b < n; b++) {
+            if (a === i && b === k) {
+                answers[pairIndex] = value;
+                break;
+            } else if (a === k && b === i) {
+                answers[pairIndex] = 1 / value;
+                break;
+            }
+            pairIndex++;
+        }
+    }
+
+    // Сохраняем ответы
+    localStorage.setItem("ahp_answers", JSON.stringify(answers));
+
+    // Повторный расчёт
+    submitData();
+}
+
+function applyClarification(i, k, value) {
+    const n = criteria.length;
+
+    // Найти индекс пары (i, k)
+    let pairIndex = 0;
+    for (let a = 0; a < n; a++) {
+        for (let b = a + 1; b < n; b++) {
+            if (a === i && b === k) {
+                answers[pairIndex] = value;
+                break;
+            }
+            pairIndex++;
+        }
+    }
+
+    // Сохранение и повторный расчёт
+    localStorage.setItem("ahp_answers", JSON.stringify(answers));
+    submitData();
+}
+
+function showResult(data) {
     formDiv.style.display = "none";
     document.querySelector(".instructions").style.display = "none";
-
     document.getElementById("submitBtn").style.display = "none";
 
     resultDiv.style.display = "block";
-    resultDiv.innerHTML = "<h2> Рейтинг квартир</h2>";
+    resultDiv.innerHTML = "<h2>Рейтинг квартир</h2>";
 
+    // Вывод рейтинга
     data.ranking.forEach((apt, index) => {
         const isTop = index === 0 ? "top1" : "";
-
         resultDiv.innerHTML += `
             <div class="card ${isTop}">
                 <h3>${index + 1} место — ${apt.name}</h3>
                 <p><b>Адрес:</b> ${apt.address}</p>
-                <p><b>Оценка:</b> ${apt.score.toFixed(3)}</p>
+
+                <p><b>Оценка:</b> ${(apt.score * 100).toFixed(1)}%</p>
                 <a href="${apt.url}" target="_blank">Открыть объявление</a>
             </div>
         `;
     });
 
+    // Кнопки редактирования
     resultDiv.innerHTML += `
-    <div style="text-align:center; margin-top:20px;">
-        <button onclick="editAnswers()" id="editBtn">
-            ✏️ Изменить ответы
-        </button>
+        <div style="text-align:center; margin-top:20px;">
+            <button onclick="editAnswers()" id="editBtn">✏️ Изменить ответы</button>
+            <button onclick="restartTest()" id="restartBtn">🔄 Пройти заново</button>
+        </div>
+    `;
 
-        <button onclick="restartTest()" id="restartBtn">
-            🔄 Пройти заново
-        </button>
-    </div>
-`;
-
+    // Вывод весов критериев
     const normalizedWeights = normalizeWeights(data.weights);
-
     resultDiv.innerHTML += `
-    <div class="instructions">
-        <h2>Полученная важность критериев</h2>
-        <ul>
-            ${normalizedWeights.map((w, i) =>
-                `<li><b>${criteria[i]}:</b> ${w.toFixed(3)}</li>`
+        <div class="instructions">
+            <h2>Полученная важность критериев</h2>
+            <ul>
+                ${normalizedWeights.map((w, i) =>
+                `<li><b>${criteria[i]}:</b> ${(w * 100).toFixed(1)}%</li>`
             ).join("")}
-        </ul>
-    </div>
-`;
+            </ul>
+        </div>
+    `;
 
-if (data.CR > 0.1) {
+    // --- Уточняющий вопрос ---
+    if (data.CR >= 0.1 && data.clarification) {
     resultDiv.innerHTML += `
-        <div style="color:red; text-align:center; margin-bottom:15px;">
-            ⚠️ Ваши ответы не совсем согласованы (CR = ${data.CR.toFixed(2)}).
-            Можно улучшить результат, немного скорректировав оценки.
+        <div class="instructions">
+            <h3>Уточнение предпочтений</h3>
+            <p>
+                Ваши ответы содержат противоречия (CR = ${data.CR.toFixed(2)}).
+                Уточните относительную важность критериев:
+            </p>
+            <p>
+                <b>${data.clarification.criterion1}</b> по сравнению с 
+                <b>${data.clarification.criterion2}</b>
+            </p>
+            <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+                ${[1,3,5,7,9].map(v => `
+                    <button onclick="applyClarification(${data.clarification.index_i}, ${data.clarification.index_k}, ${v})">
+                        ${v}
+                    </button>
+                `).join("")}
+            </div>
         </div>
     `;
 }
-
 }
+// function showResult(data) {
+
+//     formDiv.style.display = "none";
+//     document.querySelector(".instructions").style.display = "none";
+
+//     document.getElementById("submitBtn").style.display = "none";
+
+//     resultDiv.style.display = "block";
+//     resultDiv.innerHTML = "<h2> Рейтинг квартир</h2>";
+
+//     data.ranking.forEach((apt, index) => {
+//         const isTop = index === 0 ? "top1" : "";
+
+//         resultDiv.innerHTML += `
+//             <div class="card ${isTop}">
+//                 <h3>${index + 1} место — ${apt.name}</h3>
+//                 <p><b>Адрес:</b> ${apt.address}</p>
+//                 <p><b>Оценка:</b> ${apt.score.toFixed(3)}</p>
+//                 <a href="${apt.url}" target="_blank">Открыть объявление</a>
+//             </div>
+//         `;
+//     });
+
+//     resultDiv.innerHTML += `
+//     <div style="text-align:center; margin-top:20px;">
+//         <button onclick="editAnswers()" id="editBtn">
+//             ✏️ Изменить ответы
+//         </button>
+
+//         <button onclick="restartTest()" id="restartBtn">
+//             🔄 Пройти заново
+//         </button>
+//     </div>
+// `;
+
+//     const normalizedWeights = normalizeWeights(data.weights);
+
+//     resultDiv.innerHTML += `
+//     <div class="instructions">
+//         <h2>Полученная важность критериев</h2>
+//         <ul>
+//             ${normalizedWeights.map((w, i) =>
+//                 `<li><b>${criteria[i]}:</b> ${w.toFixed(3)}</li>`
+//             ).join("")}
+//         </ul>
+//     </div>
+// `;
+
+// if (data.CR >= 0.1 && data.clarification) {
+//     resultDiv.innerHTML += `
+//         <div class="instructions">
+//             <h3>Уточнение предпочтений</h3>
+//             <p>
+//                 Ваши ответы содержат противоречия (CR = ${data.CR.toFixed(2)}).
+//                 Пожалуйста, уточните, что для вас важнее:
+//             </p>
+//             <p>
+//                 <b>${data.clarification.criterion1}</b> или 
+//                 <b>${data.clarification.criterion2}</b>?
+//             </p>
+//         </div>
+//     `;
+// }
+
+// }
 
 // window.onload = () => {
 //     const savedResult = localStorage.getItem("ahp_result");
