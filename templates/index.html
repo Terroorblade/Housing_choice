@@ -181,21 +181,39 @@ h1 {
   max-width: 600px;
   margin: 0 auto 30px auto;
 }
+/* Контейнер для кнопок уточнения */
+.clarify-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+/* Кнопки уточнения */
 .clarify-btn {
-    margin: 5px;
-    padding: 10px 20px;
+    min-width: 90px;
+    padding: 12px 18px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     background: linear-gradient(135deg, #8d53eb, #c154ec);
     color: white;
     cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
     transition: 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 .clarify-btn:hover {
     transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
+/* Отображение значения CR */
+.cr-value {
+    font-size: 12px;
+    opacity: 0.9;
+}
 </style>
 </head>
 <body>

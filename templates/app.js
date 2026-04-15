@@ -195,6 +195,78 @@ function applyClarification(i, k, value) {
     submitData();
 }
 
+//улучшение весов вариант 1 
+// function showResult(data) {
+//     formDiv.style.display = "none";
+//     document.querySelector(".instructions").style.display = "none";
+//     document.getElementById("submitBtn").style.display = "none";
+
+//     resultDiv.style.display = "block";
+//     resultDiv.innerHTML = "<h2>Рейтинг квартир</h2>";
+
+//     // Вывод рейтинга
+//     data.ranking.forEach((apt, index) => {
+//         const isTop = index === 0 ? "top1" : "";
+//         resultDiv.innerHTML += `
+//             <div class="card ${isTop}">
+//                 <h3>${index + 1} место — ${apt.name}</h3>
+//                 <p><b>Адрес:</b> ${apt.address}</p>
+
+//                 <p><b>Оценка:</b> ${(apt.score * 100).toFixed(1)}%</p>
+//                 <a href="${apt.url}" target="_blank">Открыть объявление</a>
+//             </div>
+//         `;
+//     });
+
+//     // Кнопки редактирования
+//     resultDiv.innerHTML += `
+//         <div style="text-align:center; margin-top:20px;">
+//             <button onclick="editAnswers()" id="editBtn">✏️ Изменить ответы</button>
+//             <button onclick="restartTest()" id="restartBtn">🔄 Пройти заново</button>
+//         </div>
+//     `;
+
+//     // Вывод весов критериев
+//     const normalizedWeights = normalizeWeights(data.weights);
+//     resultDiv.innerHTML += `
+//         <div class="instructions">
+//             <h2>Полученная важность критериев</h2>
+//             <ul>
+//                 ${normalizedWeights.map((w, i) =>
+//                 `<li><b>${criteria[i]}:</b> ${(w * 100).toFixed(1)}%</li>`
+//             ).join("")}
+//             </ul>
+//         </div>              
+//     `;
+
+//     // --- Уточняющий вопрос ---
+//     if (data.CR >= 0.1 && data.clarification) {
+//     resultDiv.innerHTML += `
+//         <div class="instructions">
+//             <h3>Уточнение предпочтений</h3>
+//             <p>
+//                 Ваши ответы содержат противоречия (CR = ${data.CR.toFixed(2)}).
+//                 Уточните относительную важность критериев:
+//             </p>
+//             <p>
+//                 <b>${data.clarification.criterion1}</b> по сравнению с 
+//                 <b>${data.clarification.criterion2}</b>
+//             </p>
+//             <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+//                 ${[1,3,5,7,9].map(v => `
+//                     <button onclick="applyClarification(${data.clarification.index_i}, ${data.clarification.index_k}, ${v})">
+//                         ${v}
+//                     </button>
+//                 `).join("")}
+//             </div>
+//         </div>
+//     `;
+// }
+// }
+
+
+//улучшение весов вариант 2
+
 function showResult(data) {
     formDiv.style.display = "none";
     document.querySelector(".instructions").style.display = "none";
@@ -203,14 +275,13 @@ function showResult(data) {
     resultDiv.style.display = "block";
     resultDiv.innerHTML = "<h2>Рейтинг квартир</h2>";
 
-    // Вывод рейтинга
+    // Вывод рейтинга квартир
     data.ranking.forEach((apt, index) => {
         const isTop = index === 0 ? "top1" : "";
         resultDiv.innerHTML += `
             <div class="card ${isTop}">
                 <h3>${index + 1} место — ${apt.name}</h3>
                 <p><b>Адрес:</b> ${apt.address}</p>
-
                 <p><b>Оценка:</b> ${(apt.score * 100).toFixed(1)}%</p>
                 <a href="${apt.url}" target="_blank">Открыть объявление</a>
             </div>
@@ -232,36 +303,64 @@ function showResult(data) {
             <h2>Полученная важность критериев</h2>
             <ul>
                 ${normalizedWeights.map((w, i) =>
-                `<li><b>${criteria[i]}:</b> ${(w * 100).toFixed(1)}%</li>`
-            ).join("")}
+                    `<li><b>${criteria[i]}:</b> ${(w * 100).toFixed(1)}%</li>`
+                ).join("")}
             </ul>
+            <p style="text-align:center; margin-top:10px;">
+                <b>Коэффициент согласованности CR = ${data.CR.toFixed(3)}</b>
+            </p>
         </div>
     `;
 
-    // --- Уточняющий вопрос ---
-    if (data.CR >= 0.1 && data.clarification) {
+    // --- Уточняющий вопрос с "умными" подсказками ---
+    // --- Уточняющий вопрос с "умными" подсказками ---
+if (data.CR >= 0.15 && data.clarification && data.clarification.suggested_values.length > 0) {
+
+    // Пояснения к шкале Саати
+    const saatyLabels = {
+        1: "равная важность",
+        3: "слегка важнее",
+        5: "заметно важнее",
+        7: "сильно важнее",
+        9: "крайне важнее"
+    };
+
     resultDiv.innerHTML += `
         <div class="instructions">
             <h3>Уточнение предпочтений</h3>
             <p>
-                Ваши ответы содержат противоречия (CR = ${data.CR.toFixed(2)}).
-                Уточните относительную важность критериев:
+                Для повышения согласованности оценок предлагается уточнить
+                относительную важность критериев:
             </p>
-            <p>
+            <p style="text-align:center; font-size:16px;">
                 <b>${data.clarification.criterion1}</b> по сравнению с 
                 <b>${data.clarification.criterion2}</b>
             </p>
-            <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                ${[1,3,5,7,9].map(v => `
-                    <button onclick="applyClarification(${data.clarification.index_i}, ${data.clarification.index_k}, ${v})">
-                        ${v}
+            
+
+            <div class="clarify-container">
+                ${data.clarification.suggested_values.map(opt => `
+                    <button class="clarify-btn"
+                        onclick="applyClarification(
+                            ${data.clarification.index_i},
+                            ${data.clarification.index_k},
+                            ${opt.value}
+                        )">
+                        <div class="clarify-value">${opt.value}</div>
+                        <div class="clarify-label">${saatyLabels[opt.value]}</div>
+                        <div class="cr-value">CR → ${opt.cr.toFixed(3)}</div>
                     </button>
                 `).join("")}
             </div>
+
+            
         </div>
     `;
 }
 }
+
+
+
 // function showResult(data) {
 
 //     formDiv.style.display = "none";

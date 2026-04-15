@@ -66,6 +66,36 @@ async def ahp_page(request: Request):
     )
 
 
+
+#фция анализа влияния изменения значений на cr для уточнения
+def suggest_best_values(A, i, k, scale_values=[1, 3, 5, 7, 9]):
+    import numpy as np
+    from models.ahp import ahp, consistency_ratio
+
+    best_options = []
+    current_weights, lambda_max = ahp(A)
+    current_cr = consistency_ratio(A, lambda_max)
+
+    for value in scale_values:
+        A_test = A.copy()
+        A_test[i, k] = value
+        A_test[k, i] = 1 / value
+
+        _, lambda_max_test = ahp(A_test)
+        cr_test = consistency_ratio(A_test, lambda_max_test)
+
+        if cr_test < current_cr:
+            best_options.append({
+                "value": value,
+                "cr": cr_test
+            })
+
+    # Сортировка по наибольшему улучшению
+    best_options.sort(key=lambda x: x["cr"])
+
+    return best_options[:3]  # предлагаем пользователю 2–3 лучших варианта
+
+
 @app.post("/ahp")
 def ahp_endpoint(data: AHPRequest):
     A = np.array(data.matrix, dtype=float)
@@ -128,13 +158,27 @@ def ahp_endpoint(data: AHPRequest):
     }
 
     # --- Добавление уточняющего вопроса ---
-    if cr >= 0.1:
+    # if cr >= 0.1:
+    #     i, j, k = find_most_inconsistent_triplet(A)
+    #     response["clarification"] = {
+    #         "criterion1": criteria_names[i],
+    #         "criterion2": criteria_names[k],
+    #         "index_i": i,
+    #         "index_k": k
+    #     }
+
+#только весомые критерии сравниваем
+    if cr >= 0.15:
         i, j, k = find_most_inconsistent_triplet(A)
+        suggestions = suggest_best_values(A, i, k)
+
         response["clarification"] = {
             "criterion1": criteria_names[i],
             "criterion2": criteria_names[k],
             "index_i": i,
-            "index_k": k
+            "index_k": k,
+            "suggested_values": suggestions,
+            "current_CR": cr
         }
 
     return response
