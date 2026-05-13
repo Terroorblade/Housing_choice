@@ -2,6 +2,7 @@ apartments = [
     {
         "name": "Квартира 1",
         "address": "г.Киров, Хлебозаводской проезд, д.2",
+        "district": "Новый центр",
         "price_sqm": 199000,
         "area": 48.1,
         "housing_type": 1,

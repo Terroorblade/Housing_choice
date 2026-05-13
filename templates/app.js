@@ -13,6 +13,16 @@ const criteria = [
     "Транспорт"
 ];
 
+// const filters = {
+//     max_price: document.getElementById("maxPrice").value ? Number(document.getElementById("maxPrice").value): null,
+//     min_area: document.getElementById("minArea").value ? Number(document.getElementById("minArea").value): null,
+//     rooms: document.getElementById("rooms").value || null,
+//     housing_type: document.getElementById("housingType").value || null,
+//     district: document.getElementById("district").value || null,
+//     has_elevator: document.getElementById("hasElevator").value || null,
+//     floor_type: document.getElementById("floorType").value || null,
+// };
+
 
 const formDiv = document.getElementById("form");
 const resultDiv = document.getElementById("result");
@@ -33,8 +43,8 @@ function generatePairs() {
 const pairs = generatePairs(criteria);
 
 // загружаем сохранённые ответы
-// let answers = JSON.parse(localStorage.getItem("ahp_answers") || "{}");
-let answers = {};
+let answers = JSON.parse(localStorage.getItem("ahp_answers") || "{}");
+//let answers = {};
 
 
 pairs.forEach((pair, index) => {
@@ -107,15 +117,47 @@ function buildMatrix() {
 }
 
 async function submitData() {
+
+    function getFilters() {
+    return {
+        max_price: document.getElementById("maxPrice").value
+            ? Number(document.getElementById("maxPrice").value)
+            : null,
+
+        min_area: document.getElementById("minArea").value
+            ? Number(document.getElementById("minArea").value)
+            : null,
+
+        rooms: document.getElementById("rooms").value
+            ? Number(document.getElementById("rooms").value)
+            : null,
+
+        housing_type: document.getElementById("housingType").value !== ""
+            ? Number(document.getElementById("housingType").value)
+            : null,
+
+        district: document.getElementById("district").value || null,
+
+        has_elevator: document.getElementById("hasElevator").value === ""
+            ? null
+            : document.getElementById("hasElevator").value === "true",
+
+        floor_type: document.getElementById("floorType").value || null,
+    };
+}
+
+
     const matrix = buildMatrix();
     if (!matrix) return;
+
+    const filters = getFilters();
 
     const response = await fetch("/ahp", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ matrix })
+        body: JSON.stringify({ matrix, filters })
     });
 
     const data = await response.json();
@@ -144,6 +186,7 @@ function restartTest() {
     answers = {};
     formDiv.innerHTML = "";
     localStorage.removeItem("ahp_answers");
+    localStorage.removeItem("ahp_result");
     sessionStorage.removeItem("ahp_result");
     location.reload();
 }
@@ -272,8 +315,56 @@ function showResult(data) {
     document.querySelector(".instructions").style.display = "none";
     document.getElementById("submitBtn").style.display = "none";
 
+    document.querySelector(".filter-section").style.display = "none";
+
     resultDiv.style.display = "block";
     resultDiv.innerHTML = "<h2>Рейтинг квартир</h2>";
+
+
+//если нет подходящих квартир
+    if (!data.ranking || data.ranking.length === 0) {
+        formDiv.style.display = "none";
+        document.querySelector(".instructions").style.display = "none";
+        document.getElementById("submitBtn").style.display = "none";
+        document.querySelector(".filter-section").style.display = "none";
+
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = `
+    <h2>Результаты подбора</h2>
+
+    <div class="card" style="text-align:center;">
+        <h3>Квартир с выбранными параметрами не найдено</h3>
+        <p style="margin-top:10px;">
+            Попробуйте изменить фильтры или расширить диапазон поиска.
+        </p>
+
+        ${data.CR !== undefined ? `
+            <div class="instructions" style="margin-top:15px;">
+                <h3>Согласованность оценок</h3>
+                <p style="text-align:center;">
+                    <b>CR = ${data.CR.toFixed(3)}</b>
+                </p>
+            </div>
+        ` : ""}
+    </div>
+
+    <div class="instructions">
+        <h3>Что можно сделать</h3>
+        <ul>
+            <li>Увеличить диапазон цены</li>
+            <li>Убрать часть фильтров</li>
+        </ul>
+    </div>
+
+    <div style="text-align:center; margin-top:20px;">
+        <button id="editBtn" onclick="editAnswers()">✏️ Изменить фильтр</button>
+        <button id="restartBtn" onclick="restartTest()">🔄 Пройти заново</button>
+    </div>
+`;
+
+        return;
+    }
+
 
     // Вывод рейтинга квартир
     data.ranking.forEach((apt, index) => {
@@ -427,27 +518,31 @@ if (data.CR >= 0.15 && data.clarification && data.clarification.suggested_values
 
 // }
 
-// window.onload = () => {
-//     const savedResult = localStorage.getItem("ahp_result");
+window.onload = () => {
+    const savedResult = localStorage.getItem("ahp_result");
 
-//     if (savedResult) {
-//         showResult(JSON.parse(savedResult));
-//     }
-// };
+     if (savedResult) {
+        const data = JSON.parse(savedResult);
+
+        if (data?.ranking?.length > 0) {
+            showResult(data);
+        }
+    }
+};
 
 // window.onload = () => {
 //     sessionStorage.removeItem("ahp_result"); 
 // };
 
-window.onload = () => {
-    localStorage.removeItem("ahp_answers");
-    sessionStorage.removeItem("ahp_result");
-};
+// window.onload = () => {
+//     localStorage.removeItem("ahp_answers");
+//     sessionStorage.removeItem("ahp_result");
+// };
 
 function editAnswers() {
     resultDiv.style.display = "none";
     formDiv.style.display = "block";
+   document.querySelector(".filter-section").style.display = "block";
 
     document.getElementById("submitBtn").style.display = "block";
 }
-

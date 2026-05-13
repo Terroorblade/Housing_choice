@@ -12,19 +12,46 @@ from models.ahp import consistency_ratio
 from pydantic import BaseModel
 from data.criteria import criteria_names
 
+from data.mongo import apartments_collection
+from data.filters import get_filtered_apartments
+from typing import Optional
+
+apartments = list(apartments_collection.find({}, {"_id": 0}))
+
 
 templates = Jinja2Templates(directory="templates")
 
+from typing import Optional
+
+class ApartmentFilters(BaseModel):
+
+    max_price: Optional[float] = None
+    min_area: Optional[float] = None
+
+    rooms: Optional[int] = None
+
+    housing_type: Optional[int] = None
+
+    district: Optional[str] = None
+
+    floor_type: Optional[str] = None
+
+    has_elevator: Optional[bool] = None
+
 class AHPRequest(BaseModel):
     matrix: list[list[float]]
+    filters: Optional[ApartmentFilters] = ApartmentFilters()
+
+# class AHPRequest(BaseModel):
+#     matrix: list[list[float]]
 
 class FTOPSISRequest(BaseModel):
     weights: list[float]
-
+    filters: Optional[ApartmentFilters] = ApartmentFilters()
     
 class ElectreRequest(BaseModel):
     weights: list[float]
-
+    filters: Optional[ApartmentFilters] = ApartmentFilters()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="templates"), name="static")
@@ -38,6 +65,80 @@ app.mount("/static", StaticFiles(directory="templates"), name="static")
 #     <a href="/ftopsis">FTOPSIS</a><br>
 #     <a href="/electre">ELECTRE</a>
 #     """
+
+#фильтры
+# def get_filtered_apartments(filters):
+
+#     query = {}
+
+#     # ЦЕНА
+#     if filters.max_price:
+#         query["price_total"] = {
+#             "$lte": float(filters.max_price)
+#         }
+
+#     # ПЛОЩАДЬ
+#     if filters.min_area:
+#         query["area"] = {
+#             "$gte": float(filters.min_area)
+#         }
+
+#     # КОМНАТЫ
+#     if filters.rooms:
+#         query["rooms"] = int(filters.rooms)
+
+#     # ТИП ЖИЛЬЯ
+#     if filters.housing_type is not None and filters.housing_type != "":
+#         query["housing_type"] = int(filters.housing_type)
+
+#     # РАЙОН
+#     if filters.district:
+#         query["district"] = filters.district
+
+#     # ЛИФТ
+#     if filters.has_elevator is not None:
+#         query["has_elevator"] = filters.has_elevator
+
+#     # ЭТАЖИ
+#     apartments = list(
+#         apartments_collection.find(query, {"_id": 0})
+#     )
+
+#     # фильтрация этажей
+#     if filters.floor_type:
+
+#         filtered = []
+
+#         for apt in apartments:
+
+#             floor = apt.get("floor")
+#             total = apt.get("total_floors")
+
+#             # только первый
+#             if filters.floor_type == "first":
+#                 if floor == 1:
+#                     filtered.append(apt)
+
+#             # только последний
+#             elif filters.floor_type == "last":
+#                 if floor == total:
+#                     filtered.append(apt)
+
+#             # не первый
+#             elif filters.floor_type == "not_first":
+#                 if floor != 1:
+#                     filtered.append(apt)
+
+#             # не последний
+#             elif filters.floor_type == "not_last":
+#                 if floor != total:
+#                     filtered.append(apt)
+
+#         apartments = filtered
+
+#     return apartments
+
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -96,80 +197,137 @@ def suggest_best_values(A, i, k, scale_values=[1, 3, 5, 7, 9]):
     return best_options[:3]  # предлагаем пользователю 2–3 лучших варианта
 
 
+#AHP С ФИЛЬТРАМИ
 @app.post("/ahp")
 def ahp_endpoint(data: AHPRequest):
+
+    # =========================
+    # ФИЛЬТРАЦИЯ КВАРТИР
+    # =========================
+
+    apartments = get_filtered_apartments(data.filters)
+
+    # если ничего не найдено
+    if len(apartments) == 0:
+        return {
+            "error": "Квартиры по заданным фильтрам не найдены"
+        }
+
+    # =========================
+    # МАТРИЦА ПАРНЫХ СРАВНЕНИЙ
+    # =========================
+
     A = np.array(data.matrix, dtype=float)
 
-    # --- Расчёт весов ---
+    # =========================
+    # РАСЧЕТ ВЕСОВ AHP
+    # =========================
+
     weights, lambda_max = ahp_calc(A)
 
-    # --- Расчёт коэффициента согласованности ---
+    # =========================
+    # КОЭФФИЦИЕНТ СОГЛАСОВАННОСТИ
+    # =========================
+
     cr = consistency_ratio(A, lambda_max)
 
-    # --- Формирование матрицы критериев квартир ---
+    # =========================
+    # ФОРМИРОВАНИЕ МАТРИЦЫ КРИТЕРИЕВ
+    # =========================
+
     matrix = []
+
     for apt in apartments:
+
         row = [
-            apt["price_sqm"],
-            apt["area"],
-            apt["housing_type"],
-            apt["dist_kindergarten"],
-            apt["dist_school"],
-            apt["dist_clinic_child"],
-            apt["dist_clinic_adult"],
-            apt["sections"],
-            apt["ecology"],
-            apt["transport"]
+            apt["price_sqm"],           # Цена за м²
+            apt["area"],                # Площадь
+            apt["housing_type"],        # Тип жилья
+            apt["dist_kindergarten"],   # Детский сад
+            apt["dist_school"],         # Школа
+            apt["dist_clinic_child"],   # Детская поликлиника
+            apt["dist_clinic_adult"],   # Взрослая поликлиника
+            apt["sections"],            # Кружки и секции
+            apt["ecology"],             # Экология
+            apt["transport"]            # Транспорт
         ]
+
         matrix.append(row)
 
     matrix = np.array(matrix, dtype=float)
 
-    # --- Индексы критериев ---
-    cost_indices = [0, 3, 4, 5, 6]      # меньше — лучше
-    benefit_indices = [1, 2, 7, 8, 9]   # больше — лучше
+    # =========================
+    # ТИПЫ КРИТЕРИЕВ
+    # =========================
 
-    # --- Нормализация ---
+    cost_indices = [0, 3, 4, 5, 6]
+    benefit_indices = [1, 2, 7, 8, 9]
+
+    # =========================
+    # НОРМАЛИЗАЦИЯ
+    # =========================
+
     norm_matrix = np.zeros_like(matrix, dtype=float)
-    for i in range(matrix.shape[1]):
-        if i in cost_indices:
-            norm_matrix[:, i] = np.min(matrix[:, i]) / matrix[:, i]
-        else:
-            norm_matrix[:, i] = matrix[:, i] / np.max(matrix[:, i])
 
-    # --- Итоговые оценки альтернатив ---
+    for i in range(matrix.shape[1]):
+
+        if i in cost_indices:
+
+            norm_matrix[:, i] = (
+                np.min(matrix[:, i]) / matrix[:, i]
+            )
+
+        else:
+
+            norm_matrix[:, i] = (
+                matrix[:, i] / np.max(matrix[:, i])
+            )
+
+    # =========================
+    # ИТОГОВЫЕ ОЦЕНКИ
+    # =========================
+
     scores = norm_matrix @ weights
+
     ranking = np.argsort(scores)[::-1]
 
+    # =========================
+    # РЕЗУЛЬТАТ
+    # =========================
+
     result = []
+
     for i in ranking:
+
         result.append({
             "name": apartments[i]["name"],
             "score": float(scores[i]),
             "address": apartments[i]["address"],
+            "district": apartments[i]["district"],
+            "price_sqm": apartments[i]["price_sqm"],
+            "area": apartments[i]["area"],
+            "rooms": apartments[i]["rooms"],
             "url": apartments[i]["url"]
         })
 
-    # --- Формирование ответа ---
+    # =========================
+    # ОТВЕТ
+    # =========================
+
     response = {
         "weights": weights.tolist(),
         "CR": float(cr),
         "ranking": result
     }
 
-    # --- Добавление уточняющего вопроса ---
-    # if cr >= 0.1:
-    #     i, j, k = find_most_inconsistent_triplet(A)
-    #     response["clarification"] = {
-    #         "criterion1": criteria_names[i],
-    #         "criterion2": criteria_names[k],
-    #         "index_i": i,
-    #         "index_k": k
-    #     }
+    # =========================
+    # УТОЧНЕНИЕ ПРЕДПОЧТЕНИЙ
+    # =========================
 
-#только весомые критерии сравниваем
     if cr >= 0.15:
+
         i, j, k = find_most_inconsistent_triplet(A)
+
         suggestions = suggest_best_values(A, i, k)
 
         response["clarification"] = {
@@ -183,6 +341,98 @@ def ahp_endpoint(data: AHPRequest):
 
     return response
 
+# #------ рабочий вариант ahp без фильтра
+# @app.post("/ahp")
+# def ahp_endpoint(data: AHPRequest):
+#     A = np.array(data.matrix, dtype=float)
+
+#     # --- Расчёт весов ---
+#     weights, lambda_max = ahp_calc(A)
+
+#     # --- Расчёт коэффициента согласованности ---
+#     cr = consistency_ratio(A, lambda_max)
+
+#     # --- Формирование матрицы критериев квартир ---
+#     matrix = []
+
+
+#     for apt in apartments:
+#         row = [
+#             apt["price_sqm"],
+#             apt["area"],
+#             apt["housing_type"],
+#             apt["dist_kindergarten"],
+#             apt["dist_school"],
+#             apt["dist_clinic_child"],
+#             apt["dist_clinic_adult"],
+#             apt["sections"],
+#             apt["ecology"],
+#             apt["transport"]
+#         ]
+#         matrix.append(row)
+
+#     matrix = np.array(matrix, dtype=float)
+
+#     # --- Индексы критериев ---
+#     cost_indices = [0, 3, 4, 5, 6]      # меньше — лучше
+#     benefit_indices = [1, 2, 7, 8, 9]   # больше — лучше
+
+#     # --- Нормализация ---
+#     norm_matrix = np.zeros_like(matrix, dtype=float)
+#     for i in range(matrix.shape[1]):
+#         if i in cost_indices:
+#             norm_matrix[:, i] = np.min(matrix[:, i]) / matrix[:, i]
+#         else:
+#             norm_matrix[:, i] = matrix[:, i] / np.max(matrix[:, i])
+
+#     # --- Итоговые оценки альтернатив ---
+#     scores = norm_matrix @ weights
+#     ranking = np.argsort(scores)[::-1]
+
+#     result = []
+#     for i in ranking:
+#         result.append({
+#             "name": apartments[i]["name"],
+#             "score": float(scores[i]),
+#             "address": apartments[i]["address"],
+#             "url": apartments[i]["url"]
+#         })
+
+#     # --- Формирование ответа ---
+#     response = {
+#         "weights": weights.tolist(),
+#         "CR": float(cr),
+#         "ranking": result
+#     }
+
+#     # --- Добавление уточняющего вопроса ---
+#     # if cr >= 0.1:
+#     #     i, j, k = find_most_inconsistent_triplet(A)
+#     #     response["clarification"] = {
+#     #         "criterion1": criteria_names[i],
+#     #         "criterion2": criteria_names[k],
+#     #         "index_i": i,
+#     #         "index_k": k
+#     #     }
+
+# #только весомые критерии сравниваем
+#     if cr >= 0.15:
+#         i, j, k = find_most_inconsistent_triplet(A)
+#         suggestions = suggest_best_values(A, i, k)
+
+#         response["clarification"] = {
+#             "criterion1": criteria_names[i],
+#             "criterion2": criteria_names[k],
+#             "index_i": i,
+#             "index_k": k,
+#             "suggested_values": suggestions,
+#             "current_CR": cr
+#         }
+
+#     return response
+
+
+## НЕИСПОЛЬЗУЕМЫЙ АХП
 # @app.post("/ahp")
 # def ahp_endpoint(data: AHPRequest):
 #     A = np.array(data.matrix)
@@ -260,6 +510,14 @@ async def ftopsis_page(request: Request):
 
 @app.post("/ftopsis")
 def ftopsis_endpoint(data: FTOPSISRequest):
+    
+#с фильтрами квартиры
+    apartments = get_filtered_apartments(data.filters)
+
+    if len(apartments) == 0:
+        return {
+            "error": "Квартиры не найдены"
+        }
 
     # Формирование нечеткой матрицы
     matrix = []
@@ -328,6 +586,16 @@ async def electre_page(request: Request):
 
 @app.post("/electre")
 def electre_endpoint(data: ElectreRequest):
+
+#с фильтрами квартиры
+    apartments = get_filtered_apartments(data.filters)
+
+    if len(apartments) == 0:
+        return {
+            "error": "Квартиры не найдены"
+        }
+
+
     weights = np.array(data.weights, dtype=float)
 
     # Нормализация весов
