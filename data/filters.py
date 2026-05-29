@@ -29,9 +29,14 @@ def get_filtered_apartments(filters):
             if apt["housing_type"] != filters.housing_type:
                 continue
 
-        # Район
-        if filters.district:
-            if apt["district"] != filters.district:
+        # # Район
+        # if filters.district:
+        #     if apt["district"] != filters.district:
+        #         continue
+        # Районы (множественный выбор)
+        if getattr(filters, "districts", None):
+
+            if apt["district"] not in filters.districts:
                 continue
 
         # Лифт

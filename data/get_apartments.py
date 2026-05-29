@@ -2,7 +2,18 @@ from data.mongo import apartments_collection, districts_collection
 
 
 def get_apartments_with_district_data():
-    apartments = list(apartments_collection.find({}, {"_id": 0}))
+    # apartments = list(apartments_collection.find({}, {"_id": 0}))
+    #активные квартиры
+    apartments = list(
+    apartments_collection.find(
+        {
+            "is_active": True
+        },
+        {
+            "_id": 0
+        }
+    )
+)
 
     result = []
 

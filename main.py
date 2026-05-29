@@ -12,11 +12,19 @@ from models.ahp import consistency_ratio
 from pydantic import BaseModel
 from data.criteria import criteria_names
 
-from data.mongo import apartments_collection
+from data.mongo import apartments_collection, saved_surveys_collection
 from data.filters import get_filtered_apartments
 from typing import Optional
+from datetime import datetime
+from fastapi.staticfiles import StaticFiles
 
-apartments = list(apartments_collection.find({}, {"_id": 0}))
+
+class SaveSurveyRequest(BaseModel):
+    method: str
+    answers: dict
+    filters: dict
+
+# apartments = list(apartments_collection.find({}, {"_id": 0}))
 
 
 templates = Jinja2Templates(directory="templates")
@@ -32,7 +40,9 @@ class ApartmentFilters(BaseModel):
 
     housing_type: Optional[int] = None
 
-    district: Optional[str] = None
+    # district: Optional[str] = None
+    districts: Optional[list[str]] = None
+
 
     floor_type: Optional[str] = None
 
@@ -54,7 +64,9 @@ class ElectreRequest(BaseModel):
     filters: Optional[ApartmentFilters] = ApartmentFilters()
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="templates"), name="static")
+# app.mount("/static", StaticFiles(directory="templates"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 
 # @app.get("/", response_class=HTMLResponse)
@@ -140,14 +152,82 @@ app.mount("/static", StaticFiles(directory="templates"), name="static")
 
 
 
+# @app.get("/", response_class=HTMLResponse)
+# async def home(request: Request):
+#     return templates.TemplateResponse(
+#         name="home.html",
+#         request=request,
+#         context={}
+#     )
+
+#рабочая только с ahp
+# @app.get("/", response_class=HTMLResponse)
+# async def home(request: Request):
+
+#     user_ip = request.client.host
+
+#     ahp_surveys = list(
+#         saved_surveys_collection.find(
+#             {
+#                 "method": "ahp",
+#                 "user_id": user_ip
+#             }
+#         ).sort("created_at", -1)
+#     )
+
+#     for survey in ahp_surveys:
+#         survey["_id"] = str(survey["_id"])
+
+#     # return templates.TemplateResponse(
+#     #     "home.html",
+#     #     {
+#     #         "request": request,
+#     #         "ahp_surveys": ahp_surveys
+#     #     }
+#     # )
+#     return templates.TemplateResponse(
+#     name="home.html",
+#     request=request,
+#     context={
+#         "ahp_surveys": ahp_surveys
+#     }
+# )
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
+    user_ip = request.client.host
+
+    # Загружаем опросы для ВСЕХ методов
+    ahp_surveys = list(
+        saved_surveys_collection.find(
+            {"method": "ahp", "user_id": user_ip}
+        ).sort("created_at", -1)
+    )
+    ftopsis_surveys = list(
+        saved_surveys_collection.find(
+            {"method": "ftopsis", "user_id": user_ip}
+        ).sort("created_at", -1)
+    )
+    electre_surveys = list(
+        saved_surveys_collection.find(
+            {"method": "electre", "user_id": user_ip}
+        ).sort("created_at", -1)
+    )
+
+    # Конвертируем ObjectId в строку для шаблона
+    for survey in ahp_surveys + ftopsis_surveys + electre_surveys:
+        survey["_id"] = str(survey["_id"])
+
     return templates.TemplateResponse(
         name="home.html",
         request=request,
-        context={}
+        context={
+            "ahp_surveys": ahp_surveys,
+            "ftopsis_surveys": ftopsis_surveys,
+            "electre_surveys": electre_surveys
+        }
     )
-
 
 def to_fuzzy(value):
     return (value * 0.9, value, value * 1.1)
@@ -157,16 +237,32 @@ def to_fuzzy(value):
 #     return (max(1, value - delta), value, min(10, value + delta))
 
 
+#рабочий 1
+# @app.get("/ahp", response_class=HTMLResponse)
+# async def ahp_page(request: Request):
+#     return templates.TemplateResponse(
+#         name="index.html",
+#         request=request,
+#         context={}
+#     )
+
+
+# @app.get("/ahp", response_class=HTMLResponse)
+# async def ahp_page(request: Request):
+#     return templates.TemplateResponse(
+#         "index.html",
+#         {
+#             "request": request
+#         }
+#     )
 
 @app.get("/ahp", response_class=HTMLResponse)
 async def ahp_page(request: Request):
     return templates.TemplateResponse(
-        name="index.html",
+        name="ahp.html",
         request=request,
         context={}
     )
-
-
 
 #фция анализа влияния изменения значений на cr для уточнения
 def suggest_best_values(A, i, k, scale_values=[1, 3, 5, 7, 9]):
@@ -499,6 +595,23 @@ def ahp_endpoint(data: AHPRequest):
 #         "ranking": result
 #     }
 
+#рабочий 1
+# @app.get("/ftopsis", response_class=HTMLResponse)
+# async def ftopsis_page(request: Request):
+#     return templates.TemplateResponse(
+#         name="ftopsis.html",
+#         request=request,
+#         context={}
+#     )
+
+# @app.get("/ftopsis", response_class=HTMLResponse)
+# async def ftopsis_page(request: Request):
+#     return templates.TemplateResponse(
+#         "ftopsis.html",
+#         {
+#             "request": request
+#         }
+#     )
 
 @app.get("/ftopsis", response_class=HTMLResponse)
 async def ftopsis_page(request: Request):
@@ -550,8 +663,29 @@ def ftopsis_endpoint(data: FTOPSISRequest):
         "benefit"    # Транспорт
     ]
 
+#шкала нечетких чисел для опроса
+    fuzzy_scale = {
+        1: (1, 1, 2),
+        2: (1, 2, 3),
+        3: (2, 3, 4),
+        4: (3, 4, 5),
+        5: (4, 5, 6),
+        6: (5, 6, 7),
+        7: (6, 7, 8),
+        8: (7, 8, 9),
+        9: (8, 9, 10),
+        10: (9, 10, 10)
+    }
+
     # Нормализация весов
-    weights = np.array(data.weights)
+    # weights = np.array(data.weights)
+    
+
+    weights = np.array([
+    fuzzy_scale[int(w)][1]
+    for w in data.weights
+], dtype=float)
+
     weights = weights / np.sum(weights)
 
     # Расчёт FTOPSIS
@@ -574,62 +708,242 @@ def ftopsis_endpoint(data: FTOPSISRequest):
         "ranking": result
     }
 
+#рабочий 1
+# @app.get("/electre", response_class=HTMLResponse)
+# async def electre_page(request: Request):
+#     return templates.TemplateResponse(
+#         name="electre.html",
+#         request=request,
+#         context={}
+        
+
+#     )
+
+# @app.get("/electre", response_class=HTMLResponse)
+# async def electre_page(request: Request):
+#     return templates.TemplateResponse(
+#         "electre.html",
+#         {
+#             "request": request
+#         }
+#     )
+
 @app.get("/electre", response_class=HTMLResponse)
 async def electre_page(request: Request):
     return templates.TemplateResponse(
         name="electre.html",
         request=request,
         context={}
-        
-
     )
+
 
 @app.post("/electre")
 def electre_endpoint(data: ElectreRequest):
 
-#с фильтрами квартиры
+    # ===== 1. Фильтрация квартир =====
+
     apartments = get_filtered_apartments(data.filters)
 
     if len(apartments) == 0:
         return {
-            "error": "Квартиры не найдены"
+            "kernel": []
         }
 
+    # ===== 2. Веса =====
 
     weights = np.array(data.weights, dtype=float)
 
-    # Нормализация весов
     weights = weights / np.sum(weights)
 
-    # Формирование матрицы критериев
+    # ===== 3. Матрица критериев =====
+
     matrix = []
+
     for apt in apartments:
+
         row = [
-            apt["price_sqm"],           # cost
-            apt["area"],                # benefit
-            apt["housing_type"],        # benefit
-            apt["dist_kindergarten"],   # cost
-            apt["dist_school"],         # cost
-            apt["dist_clinic_child"],   # cost
-            apt["dist_clinic_adult"],   # cost
-            apt["sections"],            # benefit
-            apt["ecology"],             # benefit
-            apt["transport"]            # benefit
+            apt["price_sqm"],          # cost
+            apt["area"],               # benefit
+            apt["housing_type"],       # benefit
+            apt["dist_kindergarten"],  # cost
+            apt["dist_school"],        # cost
+            apt["dist_clinic_child"],  # cost
+            apt["dist_clinic_adult"],  # cost
+            apt["sections"],           # benefit
+            apt["ecology"],            # benefit
+            apt["transport"]           # benefit
         ]
+
         matrix.append(row)
 
-    # Запуск метода ELECTRE
-    kernel, concordance, discordance = electre(matrix, weights)
+    # ===== 4. Типы критериев =====
+
+    criteria_types = [
+        "cost",
+        "benefit",
+        "benefit",
+        "cost",
+        "cost",
+        "cost",
+        "cost",
+        "benefit",
+        "benefit",
+        "benefit"
+    ]
+
+    # ===== 5. ELECTRE =====
+
+    kernel_indices, concordance, discordance = electre(
+        matrix,
+        weights,
+        criteria_types,
+        alpha=0.8,
+        beta=0.2
+    )
+
+    # ===== 6. Подсчёт score =====
+
+    scores = np.sum(concordance, axis=1)
+
+    ranking = sorted(
+        [
+            {
+                "index": i,
+                "score": float(scores[i])
+            }
+            for i in range(len(apartments))
+        ],
+        key=lambda x: x["score"],
+        reverse=True
+    )
+
+    # ===== 7. Формирование результата =====
 
     result = []
-    for i in kernel:
+
+    for item in ranking:
+
+        i = item["index"]
+
         result.append({
             "name": apartments[i]["name"],
             "address": apartments[i]["address"],
-            "url": apartments[i]["url"]
+            "url": apartments[i]["url"],
+            "score": item["score"]
         })
 
     return {
-        "kernel": result,
-        "kernel_indices": kernel
+        "kernel": result
     }
+# @app.post("/electre")
+# def electre_endpoint(data: ElectreRequest):
+
+# #с фильтрами квартиры
+#     apartments = get_filtered_apartments(data.filters)
+
+#     if len(apartments) == 0:
+#         return {
+#             "error": "Квартиры не найдены"
+#         }
+
+
+#     weights = np.array(data.weights, dtype=float)
+
+#     # Нормализация весов
+#     weights = weights / np.sum(weights)
+
+#     # Формирование матрицы критериев
+#     matrix = []
+#     for apt in apartments:
+#         row = [
+#             apt["price_sqm"],           # cost
+#             apt["area"],                # benefit
+#             apt["housing_type"],        # benefit
+#             apt["dist_kindergarten"],   # cost
+#             apt["dist_school"],         # cost
+#             apt["dist_clinic_child"],   # cost
+#             apt["dist_clinic_adult"],   # cost
+#             apt["sections"],            # benefit
+#             apt["ecology"],             # benefit
+#             apt["transport"]            # benefit
+#         ]
+#         matrix.append(row)
+
+#     # Запуск метода ELECTRE
+#     kernel, concordance, discordance = electre(matrix, weights)
+
+#     result = []
+#     for i in kernel:
+#         result.append({
+#             "name": apartments[i]["name"],
+#             "address": apartments[i]["address"],
+#             "url": apartments[i]["url"]
+#         })
+
+#     return {
+#         "kernel": result,
+#         "kernel_indices": kernel
+#     }
+
+
+#сохранение результатов опроса
+@app.post("/save-survey")
+async def save_survey(
+    data: SaveSurveyRequest,
+    request: Request
+):
+
+    user_ip = request.client.host
+
+    survey = {
+        "method": data.method,
+        "answers": data.answers,
+        "filters": data.filters,
+        "user_id": user_ip,
+        "created_at": datetime.now()
+    }
+
+    result = saved_surveys_collection.insert_one(survey)
+
+    return {
+        "success": True,
+        "id": str(result.inserted_id)
+    }
+
+@app.get("/saved-surveys/{method}")
+async def get_saved_surveys(
+    method: str,
+    request: Request
+):
+
+    user_ip = request.client.host
+
+    surveys = list(
+        saved_surveys_collection.find(
+            {
+                "method": method,
+                "user_id": user_ip
+            },
+            {
+                "answers": 0
+            }
+        ).sort("created_at", -1)
+    )
+
+    for s in surveys:
+        s["_id"] = str(s["_id"])
+
+    return surveys
+
+@app.get("/survey/{survey_id}")
+async def get_survey(survey_id: str):
+
+    from bson import ObjectId
+
+    survey = saved_surveys_collection.find_one(
+        {"_id": ObjectId(survey_id)}
+    )
+
+    survey["_id"] = str(survey["_id"])
+
+    return survey

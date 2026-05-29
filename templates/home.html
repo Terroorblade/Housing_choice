@@ -23,11 +23,13 @@ body {
 
 .card {
   background: white;
-  padding: 30px;
+  padding: 10px 30px;
   border-radius: 15px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.1);
   margin: 0 auto;
   width: 500px;
+
+  
 }
 
 button {
@@ -50,7 +52,59 @@ button {
 button:hover {
   transform: scale(1.05);
 }
+.saved-card {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
 
+.saved-section {
+  margin-top: 20px;
+}
+
+.saved-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #7b3fe4;
+}
+
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.saved-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  text-decoration: none;
+
+  background: #f7f1ff;
+  padding: 15px 20px;
+  border-radius: 12px;
+
+  transition: 0.2s;
+  color: #333;
+}
+
+.saved-item:hover {
+  transform: translateY(-2px);
+  background: #efe4ff;
+}
+
+.saved-date {
+  color: #777;
+  font-size: 14px;
+}
+
+.empty-text {
+  color: #888;
+  font-style: italic;
+}
 </style>
 </head>
 
@@ -62,12 +116,11 @@ button:hover {
   <div class="card">
     <h2>AHP</h2>
     <p>Метод парных сравнений для определения важности критериев</p>
-    <button onclick="location.href='/ahp'">Начать</button>
+    <button onclick="location.href='/ahp'">Перейти</button>
   </div>
 
   <div class="card">
     <h2>FTOPSIS</h2>
-
     <button onclick="location.href='/ftopsis'">Перейти</button>
   </div>
 
@@ -76,6 +129,132 @@ button:hover {
 
     <button onclick="location.href='/electre'">Перейти</button>
   </div>
+
+  <!-- <div class="card">
+    <h2>Сохранённые результаты опросов</h2>
+
+    <details>
+        <summary>AHP</summary>
+        <select id="ahpSaved">
+            <option>10.04.2026 14:20</option>
+        </select>
+    </details>
+
+    <details>
+        <summary>FTOPSIS</summary>
+    </details>
+
+    <details>
+        <summary>ELECTRE</summary>
+    </details>
+</div> -->
+
+<!-- <div class="saved-card">
+
+    <h2>Сохранённые опросы</h2>
+
+    <div class="saved-section">
+
+        <div class="saved-title">
+            📊 AHP
+        </div>
+
+        {% if ahp_surveys %}
+
+            <div class="saved-list">
+
+                {% for survey in ahp_surveys %}
+
+                    <a
+                        class="saved-item"
+                        href="/ahp?survey_id={{ survey._id }}"
+                    >
+
+                        <div>
+                            <strong>
+                                Опрос #{{ loop.index }}
+                            </strong>
+                        </div>
+
+                        <div class="saved-date">
+                            {{ survey.created_at.strftime("%d.%m.%Y %H:%M") }}
+                        </div>
+
+                    </a>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <p class="empty-text">
+                Пока нет сохранённых опросов
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div> -->
+
+<div class="saved-card">
+    <h2>Сохранённые опросы</h2>
+
+    <!-- AHP -->
+    <div class="saved-section">
+        <div class="saved-title">AHP</div>
+        {% if ahp_surveys %}
+            <div class="saved-list">
+                {% for survey in ahp_surveys %}
+                    <a class="saved-item" href="/ahp?survey_id={{ survey._id }}">
+                        <div><strong>Опрос #{{ loop.revindex  }}</strong></div>
+                        <div class="saved-date">{{ survey.created_at.strftime("%d.%m.%Y %H:%M") }}</div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-text">Пока нет сохранённых опросов</p>
+        {% endif %}
+    </div>
+
+    <!-- FTOPSIS -->
+    <div class="saved-section">
+        <div class="saved-title" style="color: #2196F3;">FTOPSIS</div>
+        {% if ftopsis_surveys %}
+            <div class="saved-list">
+                {% for survey in ftopsis_surveys %}
+                    <a class="saved-item" href="/ftopsis?survey_id={{ survey._id }}">
+                        <div><strong>Опрос #{{ loop.revindex  }}</strong></div>
+                        <div class="saved-date">{{ survey.created_at.strftime("%d.%m.%Y %H:%M") }}</div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-text">Пока нет сохранённых опросов</p>
+        {% endif %}
+    </div>
+
+    <!-- ELECTRE -->
+    <div class="saved-section">
+        <div class="saved-title" style="color: #ff9800;">ELECTRE</div>
+        {% if electre_surveys %}
+            <div class="saved-list">
+                {% for survey in electre_surveys %}
+                    <a class="saved-item" href="/electre?survey_id={{ survey._id }}">
+                        <div><strong>Опрос #{{ loop.revindex  }}</strong></div>
+                        <div class="saved-date">{{ survey.created_at.strftime("%d.%m.%Y %H:%M") }}</div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-text">Пока нет сохранённых опросов</p>
+        {% endif %}
+    </div>
+
+</div>
+
+
 </div>
 
 </body>

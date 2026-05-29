@@ -3,168 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>FTOPSIS</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #f5f7fb;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        /* Навигация */
-        .nav {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .nav button {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 14px;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #8d53eb, #c154ec);
-            color: white;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .nav button:hover {
-            transform: scale(1.05);
-        }
-
-        /* Инструкция */
-        .instructions {
-            background: #f1e9fd;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin: 0 auto 30px auto;
-            max-width: 600px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-        }
-
-        .instructions h2 {
-            text-align: center;
-        }
-
-        .instructions ul {
-            margin: 10px auto;
-            text-align: left;
-        }
-
-        /* Карточка критерия */
-        .criterion-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
-
-        .criterion-title {
-            text-align: center;
-            font-size: 16px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
-        /* Шкала */
-        .scale {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 5px;
-        }
-
-        .scale button {
-            height: 40px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            background: white;
-            cursor: pointer;
-            transition: 0.2s;
-            font-weight: bold;
-        }
-
-        .scale button:hover {
-            background: #e3f2fd;
-        }
-
-        .scale button.selected {
-            background: #8d53eb;
-            color: white;
-            border: none;
-        }
-
-        /* Кнопка отправки */
-        #submitBtn {
-            display: block;
-            margin: 30px auto;
-            padding: 14px 30px;
-            font-size: 16px;
-            background: linear-gradient(135deg, #5ebe37, #69ce25);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        #submitBtn:hover {
-            transform: scale(1.05);
-        }
-
-        /* Результаты */
-        #result {
-            margin-top: 30px;
-            text-align: center;
-        }
-
-        .result-card {
-            background: white;
-            border-radius: 14px;
-            padding: 20px;
-            margin: 15px 0;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            text-align: left;
-        }
-
-        .top1 {
-            border: 2px solid gold;
-            background: #fffbe6;
-        }
-
-        #editBtn, #restartBtn {
-            margin: 10px;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        #editBtn {
-            background: linear-gradient(135deg, #c76fe2, #db66b8);
-        }
-
-        #restartBtn {
-            background: linear-gradient(135deg, #9e9e9e, #616161);
-        }
-
-        #editBtn:hover, #restartBtn:hover {
-            transform: scale(1.05);
-        }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
@@ -198,13 +37,147 @@
 
 
 <div class="container">
+
+    <div class="filter-section">
+  <h2 style="margin-top: 0; text-align: center;">Фильтры квартир</h2>
+
+  <div class="filter-grid">
+
+    <div class="filter-item">
+      <label>Максимальная цена:</label>
+      <input type="number" id="maxPrice" placeholder="Например 10000000" min="500000" max="15000000">
+    </div>
+
+    <div class="filter-item">
+      <label>Минимальная площадь:</label>
+      <input type="number" id="minArea" placeholder="Например 40" min="30" max="200">
+    </div>
+
+    <div class="filter-item">
+      <label>Количество комнат:</label>
+      <select id="rooms">
+        <option value="">Не важно</option>
+        <option value="1">1 комната</option>
+        <option value="2">2 комнаты</option>
+        <option value="3">3 комнаты</option>
+        <option value="4">4+ комнаты</option>
+      </select>
+    </div>
+
+    <div class="filter-item">
+      <label>Тип жилья:</label>
+      <select id="housingType">
+        <option value="">Не важно</option>
+        <option value="1">Новостройка</option>
+        <option value="0">Вторичное жильё</option>
+      </select>
+    </div>
+
+    <!-- <div class="filter-item">
+      <label>Район:</label>
+      <select id="district">
+        <option value="">Не важно</option>
+        <option value="Юго-Запад">Юго-Запад</option>
+        <option value="Европейские улочки">Европейские улочки</option>
+        <option value="Метроград">Метроград</option>
+        <option value="Парк победы">Парк победы</option>
+        <option value="Лепсе">Лепсе</option>
+        <option value="Филейка">Филейка</option>
+        <option value="Ганино">Ганино</option>
+        <option value="Старый центр">Старый центр</option>
+        <option value="Новый центр">Новый центр</option>
+        <option value="Дружба">Дружба</option>
+        <option value="Чистые пруды">Чистые пруды</option>
+        <option value="Цирк">Цирк</option>
+        <option value="Зональный">Зональный</option>
+        <option value="Коминтерн">Коминтерн</option>
+        <option value="Нововятск">Нововятск</option>
+      </select>
+    </div> -->
+
+
+    <div class="filter-item district-filter">
+  <label>Районы:</label>
+
+  <div class="district-controls">
+
+    <select id="districtSelect">
+      <option value="">Выберите район</option>
+
+      <option value="Юго-Запад">Юго-Запад</option>
+      <option value="Европейские улочки">Европейские улочки</option>
+      <option value="Метроград">Метроград</option>
+      <option value="Парк победы">Парк победы</option>
+      <option value="Лепсе">Лепсе</option>
+      <option value="Филейка">Филейка</option>
+      <option value="Ганино">Ганино</option>
+      <option value="Старый центр">Старый центр</option>
+      <option value="Новый центр">Новый центр</option>
+      <option value="Дружба">Дружба</option>
+      <option value="Чистые пруды">Чистые пруды</option>
+      <option value="Цирк">Цирк</option>
+      <option value="Зональный">Зональный</option>
+      <option value="Коминтерн">Коминтерн</option>
+      <option value="Нововятск">Нововятск</option>
+    </select>
+
+    <button type="button" id="showDistrictMapBtn">
+      🗺 Показать районы
+    </button>
+  </div>
+
+  <div id="selectedDistricts" class="selected-districts"></div>
+</div>
+
+
+    <div class="filter-item">
+      <label>Наличие лифта:</label>
+      <select id="hasElevator">
+        <option value="">Не важно</option>
+        <option value="true">Есть лифт</option>
+        <option value="false">Без лифта</option>
+      </select>
+    </div>
+
+     <div class="filter-item">
+      <label>Этаж:</label>
+      <select id="floorType">
+        <option value="">Не важно</option>
+        <option value="not_first">Не первый этаж</option>
+        <option value="not_last">Не последний этаж</option>
+        <option value="middle">Средние этажи</option>
+      </select>
+    </div>
+
+  </div>
+</div>
+    
     <h1>FTOPSIS: Важность критериев</h1>
     <div id="form"></div>
     <button id="submitBtn" onclick="submitFTOPSIS()">Получить рейтинг</button>
+    
     <div id="result"></div>
+    <div id="districtMapModal" class="district-modal">
+  <div class="district-modal-content">
+
+    <button class="close-modal" onclick="closeDistrictMap()">
+      ✕
+    </button>
+
+    <h3>Районы города</h3>
+
+    <img
+      src="/static/images/districts-map.png"
+      alt="Карта районов"
+      class="district-map-image"
+    >
+  </div>
+</div>
+    <script src="/static/js/ftopsis.js"></script>
 </div>
 
-<script>
+
+<!-- <script>
 const criteria = [
     "Цена за м²",
     "Площадь",
@@ -321,7 +294,7 @@ function restartTest() {
     answers = {};
     location.reload();
 }
-</script>
+</script> -->
 
 </body>
 </html>

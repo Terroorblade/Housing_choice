@@ -12,6 +12,7 @@ def ahp(matrix):
 
     return weights, lambda_max
 
+
 #поиск противоречивой тройки улучшение ахп
 def find_most_inconsistent_triplet(A):
     n = A.shape[0]
@@ -28,6 +29,7 @@ def find_most_inconsistent_triplet(A):
                         triplet = (i, j, k)
 
     return triplet
+
 
 def consistency_ratio(matrix, lambda_max):
     n = len(matrix)

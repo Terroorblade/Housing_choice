@@ -27,6 +27,87 @@ const criteria = [
 const formDiv = document.getElementById("form");
 const resultDiv = document.getElementById("result");
 
+// =========================
+// РАЙОНЫ
+// =========================
+
+let selectedDistricts = [];
+
+const districtSelect = document.getElementById("districtSelect");
+const selectedDistrictsContainer =
+    document.getElementById("selectedDistricts");
+
+districtSelect?.addEventListener("change", () => {
+
+    const value = districtSelect.value;
+
+    if (!value) return;
+
+    if (!selectedDistricts.includes(value)) {
+        selectedDistricts.push(value);
+    }
+
+    renderDistricts();
+
+    districtSelect.value = "";
+});
+
+function renderDistricts() {
+
+    selectedDistrictsContainer.innerHTML = "";
+
+    selectedDistricts.forEach(district => {
+
+        const tag = document.createElement("div");
+
+        tag.className = "district-tag";
+
+        tag.innerHTML = `
+            <span>${district}</span>
+
+            <button
+                class="remove-district"
+                onclick="removeDistrict('${district}')"
+            >
+                ✕
+            </button>
+        `;
+
+        selectedDistrictsContainer.appendChild(tag);
+    });
+}
+
+function removeDistrict(name) {
+
+    selectedDistricts =
+        selectedDistricts.filter(d => d !== name);
+
+    renderDistricts();
+}
+
+// =========================
+// КАРТА РАЙОНОВ
+// =========================
+
+const mapBtn =
+    document.getElementById("showDistrictMapBtn");
+
+mapBtn?.addEventListener("click", () => {
+
+    document
+        .getElementById("districtMapModal")
+        .classList.add("active");
+});
+
+function closeDistrictMap() {
+
+    document
+        .getElementById("districtMapModal")
+        .classList.remove("active");
+}
+
+window.closeDistrictMap = closeDistrictMap;
+window.removeDistrict = removeDistrict;
 
 function generatePairs() {
   let pairs = [];
@@ -116,9 +197,8 @@ function buildMatrix() {
     return matrix;
 }
 
-async function submitData() {
 
-    function getFilters() {
+function getFilters() {
     return {
         max_price: document.getElementById("maxPrice").value
             ? Number(document.getElementById("maxPrice").value)
@@ -136,15 +216,16 @@ async function submitData() {
             ? Number(document.getElementById("housingType").value)
             : null,
 
-        district: document.getElementById("district").value || null,
-
+        districts: selectedDistricts,
         has_elevator: document.getElementById("hasElevator").value === ""
             ? null
             : document.getElementById("hasElevator").value === "true",
-
         floor_type: document.getElementById("floorType").value || null,
     };
 }
+
+
+async function submitData() {
 
 
     const matrix = buildMatrix();
@@ -307,6 +388,25 @@ function applyClarification(i, k, value) {
 // }
 // }
 
+//соранение результатов опроса
+async function saveSurvey() {
+
+    const filters = getFilters();
+
+    await fetch("/save-survey", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            method: "ahp",
+            answers: answers,
+            filters: filters
+        })
+    });
+
+    alert("Опрос сохранён");
+}
 
 //улучшение весов вариант 2
 
@@ -332,8 +432,8 @@ function showResult(data) {
         resultDiv.innerHTML = `
     <h2>Результаты подбора</h2>
 
-    <div class="card" style="text-align:center;">
-        <h3>Квартир с выбранными параметрами не найдено</h3>
+    <div class="card" style="text-align:center; border: 2px solid #ff6b6b; background: #fff5f5;">
+        <h3 style="color: #c92a2a;">⚠️ Квартир с выбранными параметрами не найдено</h3>
         <p style="margin-top:10px;">
             Попробуйте изменить фильтры или расширить диапазон поиска.
         </p>
@@ -351,15 +451,17 @@ function showResult(data) {
     <div class="instructions">
         <h3>Что можно сделать</h3>
         <ul>
-            <li>Увеличить диапазон цены</li>
-            <li>Убрать часть фильтров</li>
-        </ul>
+                    <li>Увеличить диапазон цены</li>
+                    <li>Уменьшить минимальную площадь</li>
+                    <li>Убрать часть фильтров</li>
+                </ul>
     </div>
 
     <div style="text-align:center; margin-top:20px;">
         <button id="editBtn" onclick="editAnswers()">✏️ Изменить фильтр</button>
         <button id="restartBtn" onclick="restartTest()">🔄 Пройти заново</button>
-    </div>
+        <button id="saveSurvey" onclick="saveSurvey()"> 💾 Сохранить опрос </button>
+        </div>
 `;
 
         return;
@@ -384,6 +486,7 @@ function showResult(data) {
         <div style="text-align:center; margin-top:20px;">
             <button onclick="editAnswers()" id="editBtn">✏️ Изменить ответы</button>
             <button onclick="restartTest()" id="restartBtn">🔄 Пройти заново</button>
+            <button id="saveSurvey" onclick="saveSurvey()"> 💾 Сохранить опрос </button>
         </div>
     `;
 
@@ -546,3 +649,59 @@ function editAnswers() {
 
     document.getElementById("submitBtn").style.display = "block";
 }
+
+
+async function loadSurvey(surveyId) {
+
+    const response = await fetch(`/survey/${surveyId}`);
+    const survey = await response.json();
+
+    // загружаем ответы
+    answers = survey.answers;
+
+    localStorage.setItem(
+        "ahp_answers",
+        JSON.stringify(answers)
+    );
+
+    // загружаем фильтры
+    const filters = survey.filters || {};
+
+    if (filters.max_price)
+        document.getElementById("maxPrice").value = filters.max_price;
+
+    if (filters.min_area)
+        document.getElementById("minArea").value = filters.min_area;
+
+    if (filters.rooms)
+        document.getElementById("rooms").value = filters.rooms;
+
+    if (filters.housing_type !== null)
+        document.getElementById("housingType").value = filters.housing_type;
+
+    if (filters.districts) {
+
+    selectedDistricts = filters.districts;
+
+    renderDistricts();
+}
+
+    if (filters.has_elevator !== null)
+        document.getElementById("hasElevator").value = filters.has_elevator;
+
+    if (filters.floor_type)
+        document.getElementById("floorType").value = filters.floor_type;
+
+    // пересчитать результат
+    submitData();
+}
+window.addEventListener("DOMContentLoaded", async () => {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const surveyId = params.get("survey_id");
+
+    if (surveyId) {
+        await loadSurvey(surveyId);
+    }
+});
