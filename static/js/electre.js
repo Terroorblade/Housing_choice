@@ -210,7 +210,7 @@ function showResult(data) {
     resultDiv.style.display = "block";
 
     resultDiv.innerHTML =
-        "<h2>Ядро Парето (лучшие альтернативы)</h2>";
+        "<h2>Ядро ELECTRE (лучшие альтернативы)</h2>";
 
     // ===== если пусто =====
 
@@ -266,16 +266,13 @@ function showResult(data) {
             <div class="card ${index === 0 ? "top1" : ""}">
 
                 <h3>
-                    ${index + 1} место — ${apt.name}
+                    ${apt.name}
                 </h3>
 
                 <p>
                     <b>Адрес:</b> ${apt.address}
                 </p>
 
-<p>
-    <b>Оценка ELECTRE:</b> ${apt.score.toFixed(2)}
-</p>
 
                 <a href="${apt.url}" target="_blank">
                     Открыть объявление

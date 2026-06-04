@@ -680,11 +680,17 @@ def ftopsis_endpoint(data: FTOPSISRequest):
     # Нормализация весов
     # weights = np.array(data.weights)
     
+# среднее число из нечеткой оценки
+#     weights = np.array([
+#     fuzzy_scale[int(w)][1]
+#     for w in data.weights
+# ], dtype=float)
 
     weights = np.array([
-    fuzzy_scale[int(w)][1]
-    for w in data.weights
-], dtype=float)
+        sum(fuzzy_scale[int(w)]) / 3
+        for w in data.weights
+    ], dtype=float)
+
 
     weights = weights / np.sum(weights)
 
@@ -801,40 +807,66 @@ def electre_endpoint(data: ElectreRequest):
         beta=0.2
     )
 
-    # ===== 6. Подсчёт score =====
+    # # ===== 6. Подсчёт score =====
 
-    scores = np.sum(concordance, axis=1)
+    # scores = np.sum(concordance, axis=1)
 
-    ranking = sorted(
-        [
-            {
-                "index": i,
-                "score": float(scores[i])
-            }
-            for i in range(len(apartments))
-        ],
-        key=lambda x: x["score"],
-        reverse=True
+    # ranking = sorted(
+    #     [
+    #         {
+    #             "index": i,
+    #             "score": float(scores[i])
+    #         }
+    #         for i in range(len(apartments))
+    #     ],
+    #     key=lambda x: x["score"],
+    #     reverse=True
+    # )
+
+    # # ===== 7. Формирование результата =====
+
+    # result = []
+
+    # for item in ranking:
+
+    #     i = item["index"]
+
+    #     result.append({
+    #         "name": apartments[i]["name"],
+    #         "address": apartments[i]["address"],
+    #         "url": apartments[i]["url"],
+    #         "score": item["score"]
+    #     })
+
+    # return {
+    #     "kernel": result
+    # }
+
+# 2 вариант без рейтинга ядро парето
+
+    kernel_indices, concordance, discordance = electre(
+    matrix,
+    weights,
+    criteria_types,
+    alpha=0.8,
+    beta=0.2
     )
 
-    # ===== 7. Формирование результата =====
+    kernel = []
 
-    result = []
+    for i in kernel_indices:
 
-    for item in ranking:
-
-        i = item["index"]
-
-        result.append({
+        kernel.append({
             "name": apartments[i]["name"],
             "address": apartments[i]["address"],
-            "url": apartments[i]["url"],
-            "score": item["score"]
+            "url": apartments[i]["url"]
         })
 
     return {
-        "kernel": result
+        "kernel": kernel
     }
+
+
 # @app.post("/electre")
 # def electre_endpoint(data: ElectreRequest):
 
