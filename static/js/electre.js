@@ -1,14 +1,14 @@
 const criteria = [
-    "Цена за м²",
-    "Площадь",
-    "Тип жилья",
-    "Расстояние до детского сада",
-    "Расстояние до школы",
-    "Детская поликлиника",
-    "Взрослая поликлиника",
-    "Кружки и секции",
-    "Экология",
-    "Транспорт"
+    "Низкая цена за м²",           // cost — меньше = лучше
+    "Большая площадь",             // benefit — больше = лучше
+    "Новостройка",                  // benefit — 1 лучше 0
+    "Близость к детскому саду",    // cost — меньше расстояние = лучше
+    "Близость к школе",            // cost
+    "Близость к детской поликлинике", // cost
+    "Близость к взрослой поликлинике", // cost
+    "Кружки и секции в районе",   // benefit — больше = лучше
+    "Экология района",             // benefit
+    "Транспортная доступность"     // benefit
 ];
 
 const formDiv = document.getElementById("form");
@@ -19,7 +19,7 @@ let answers = JSON.parse(
 );
 
 
-// ===== множественный выбор районов =====
+// выбор нескольких районов
 
 let selectedDistricts = [];
 
@@ -79,7 +79,7 @@ function renderDistricts() {
 }
 
 
-// ===== Получение фильтров =====
+// фильтры
 
 function getFilters() {
     return {
@@ -111,12 +111,10 @@ function getFilters() {
     };
 }
 
-// ===== UI =====
 
 criteria.forEach((c, i) => {
 
     const card = document.createElement("div");
-
     card.className = "pair";
 
     card.innerHTML = `
@@ -124,7 +122,6 @@ criteria.forEach((c, i) => {
     `;
 
     const scale = document.createElement("div");
-
     scale.className = "scale ftopsis";
 
     for (let k = 1; k <= 10; k++) {
@@ -161,7 +158,6 @@ criteria.forEach((c, i) => {
     formDiv.appendChild(card);
 });
 
-// ===== submit =====
 
 async function submitElectre() {
 
@@ -197,16 +193,118 @@ async function submitElectre() {
 
 // ===== result =====
 
+let currentPage = 1;
+const itemsPerPage = 8;
+let currentKernel = [];
+
+function changePage(page) {
+
+    const totalPages =
+        Math.ceil(currentKernel.length / itemsPerPage);
+
+    if (page < 1 || page > totalPages) return;
+
+    currentPage = page;
+
+    renderPage();
+}
+
+window.changePage = changePage;
+
+function renderPage() {
+
+    const cardsContainer =
+        document.getElementById("rankingCards");
+
+    if (!cardsContainer) return;
+
+    const start =
+        (currentPage - 1) * itemsPerPage;
+
+    const end =
+        start + itemsPerPage;
+
+    const pageItems =
+        currentKernel.slice(start, end);
+
+    cardsContainer.innerHTML = "";
+
+    pageItems.forEach((apt, localIndex) => {
+
+        const globalIndex =
+            start + localIndex;
+
+        cardsContainer.innerHTML += `
+            <div class="card ${globalIndex === 0 ? "top1" : ""}">
+
+                <h3>
+                    
+                    ${apt.name}
+                </h3>
+
+                <p>
+                    <b>Адрес:</b>
+                    ${apt.address}
+                </p>
+
+                <a href="${apt.url}" target="_blank">
+                    Открыть объявление
+                </a>
+
+            </div>
+        `;
+    });
+
+    renderPagination();
+}
+
+function renderPagination() {
+
+    const pagination =
+        document.getElementById("pagination");
+
+    if (!pagination) return;
+
+    const totalPages =
+        Math.ceil(currentKernel.length / itemsPerPage);
+
+    let html = `
+        <button class="page-btn"
+                onclick="changePage(${currentPage - 1})"
+                ${currentPage === 1 ? "disabled" : ""}>
+            ←
+        </button>
+    `;
+
+    for (let i = 1; i <= totalPages; i++) {
+
+        html += `
+            <button
+                class="page-btn ${i === currentPage ? "active" : ""}"
+                onclick="changePage(${i})">
+                ${i}
+            </button>
+        `;
+    }
+
+    html += `
+        <button class="page-btn"
+                onclick="changePage(${currentPage + 1})"
+                ${currentPage === totalPages ? "disabled" : ""}>
+            →
+        </button>
+    `;
+
+    pagination.innerHTML = html;
+}
+
+
 function showResult(data) {
 
     formDiv.style.display = "none";
-
     document.querySelector(".instructions").style.display = "none";
-
     document.getElementById("submitBtn").style.display = "none";
-
     document.querySelector(".filter-section").style.display = "none";
-
     resultDiv.style.display = "block";
 
     resultDiv.innerHTML =
@@ -258,31 +356,39 @@ function showResult(data) {
         return;
     }
 
-    // ===== вывод квартир =====
+    // // ===== вывод квартир =====
+    // data.kernel.forEach((apt, index) => {
 
-    data.kernel.forEach((apt, index) => {
+    //     resultDiv.innerHTML += `
+    //         <div class="card ${index === 0 ? "top1" : ""}">
+    //             <h3>
+    //                 ${apt.name}
+    //             </h3>
+    //             <p>
+    //                 <b>Адрес:</b> ${apt.address}
+    //             </p>
+    //             <a href="${apt.url}" target="_blank">
+    //                 Открыть объявление
+    //             </a>
 
-        resultDiv.innerHTML += `
-            <div class="card ${index === 0 ? "top1" : ""}">
+    //         </div>
+    //     `;
+    // });
 
-                <h3>
-                    ${apt.name}
-                </h3>
+    currentKernel = data.kernel;
+    currentPage = 1;
 
-                <p>
-                    <b>Адрес:</b> ${apt.address}
-                </p>
+    resultDiv.innerHTML += `
+        <div id="rankingCards"></div>
 
+        <div id="pagination"
+            class="pagination">
+        </div>
+    `;
 
-                <a href="${apt.url}" target="_blank">
-                    Открыть объявление
-                </a>
+    renderPage();
 
-            </div>
-        `;
-    });
-
-    // ===== кнопки =====
+    // кнопки
 
     resultDiv.innerHTML += `
         <div style="text-align:center; margin-top:20px;">
@@ -308,26 +414,19 @@ function showResult(data) {
 function edit() {
 
     resultDiv.style.display = "none";
-
     formDiv.style.display = "block";
-
     document.querySelector(".instructions").style.display = "block";
-
     document.getElementById("submitBtn").style.display = "block";
-
     document.querySelector(".filter-section").style.display = "block";
 }
 
 function restart() {
 
     localStorage.removeItem("electre_answers");
-
     localStorage.removeItem("electre_result");
-
     location.reload();
 }
 
-// ===== save =====
 
 async function save() {
 
@@ -346,12 +445,10 @@ async function save() {
     alert("Сохранено");
 }
 
-// ===== load =====
 
 async function loadSurvey(id) {
 
     const res = await fetch(`/survey/${id}`);
-
     const survey = await res.json();
 
     answers = survey.answers;
@@ -364,7 +461,6 @@ async function loadSurvey(id) {
     submitElectre();
 }
 
-// ===== auto load =====
 
 window.onload = () => {
 
@@ -372,9 +468,7 @@ window.onload = () => {
         localStorage.getItem("electre_result");
 
     if (savedResult) {
-
         const data = JSON.parse(savedResult);
-
         if (data?.kernel?.length > 0) {
             showResult(data);
         }
@@ -392,15 +486,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// ===== globals =====
 
 window.submitElectre = submitElectre;
 window.edit = edit;
 window.restart = restart;
 window.save = save;
 
-// ===== Модалка карты =====
-
+//модалка карты
 const districtModal =
     document.getElementById("districtMapModal");
 

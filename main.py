@@ -420,7 +420,7 @@ def ahp_endpoint(data: AHPRequest):
     # УТОЧНЕНИЕ ПРЕДПОЧТЕНИЙ
     # =========================
 
-    if cr >= 0.15:
+    if cr >= 0.2:
 
         i, j, k = find_most_inconsistent_triplet(A)
 

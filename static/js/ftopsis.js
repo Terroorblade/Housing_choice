@@ -1,14 +1,14 @@
 const criteria = [
-    "Цена за м²",
-    "Площадь",
-    "Тип жилья",
-    "Расстояние до детского сада",
-    "Расстояние до школы",
-    "Детская поликлиника",
-    "Взрослая поликлиника",
-    "Кружки и секции",
-    "Экология",
-    "Транспорт"
+    "Низкая цена за м²",           // cost — меньше = лучше
+    "Большая площадь",             // benefit — больше = лучше
+    "Новостройка",                  // benefit — 1 лучше 0
+    "Близость к детскому саду",    // cost — меньше расстояние = лучше
+    "Близость к школе",            // cost
+    "Близость к детской поликлинике", // cost
+    "Близость к взрослой поликлинике", // cost
+    "Кружки и секции в районе",   // benefit — больше = лучше
+    "Экология района",             // benefit
+    "Транспортная доступность"     // benefit
 ];
 
 const formDiv = document.getElementById("form");
@@ -144,7 +144,123 @@ async function submitFTOPSIS() {
     showResult(data);
 }
 
-// ===== Отображение результатов (КАК В AHP) =====
+
+//отображение по 8 карточек квартир в результате
+let currentPage = 1;
+const itemsPerPage = 8;
+let currentRanking = [];
+
+function changePage(page) {
+
+    const totalPages =
+        Math.ceil(currentRanking.length / itemsPerPage);
+
+    if (page < 1 || page > totalPages) return;
+
+    currentPage = page;
+
+    renderPage();
+}
+
+window.changePage = changePage;
+
+function renderPage() {
+
+    const cardsContainer =
+        document.getElementById("rankingCards");
+
+    if (!cardsContainer) return;
+
+    const start =
+        (currentPage - 1) * itemsPerPage;
+
+    const end =
+        start + itemsPerPage;
+
+    const pageItems =
+        currentRanking.slice(start, end);
+
+    cardsContainer.innerHTML = "";
+
+    pageItems.forEach((apt, localIndex) => {
+
+        const globalIndex =
+            start + localIndex;
+
+        const isTop =
+            globalIndex === 0 ? "top1" : "";
+
+        let scorePercent =
+            apt.score * 100;
+
+        cardsContainer.innerHTML += `
+            <div class="card ${isTop}">
+                <h3>
+                    ${globalIndex + 1} место —
+                    ${apt.name}
+                </h3>
+
+                <p>
+                    <b>Адрес:</b>
+                    ${apt.address}
+                </p>
+
+                <p>
+                    <b>Оценка:</b>
+                    ${scorePercent.toFixed(1)}%
+                </p>
+
+                <a href="${apt.url}" target="_blank">
+                    Открыть объявление
+                </a>
+            </div>
+        `;
+    });
+
+    renderPagination();
+}
+
+function renderPagination() {
+
+    const pagination =
+        document.getElementById("pagination");
+
+    if (!pagination) return;
+
+    const totalPages =
+        Math.ceil(currentRanking.length / itemsPerPage);
+
+    let html = `
+        <button class="page-btn"
+                onclick="changePage(${currentPage - 1})"
+                ${currentPage === 1 ? "disabled" : ""}>
+            ←
+        </button>
+    `;
+
+    for (let i = 1; i <= totalPages; i++) {
+
+        html += `
+            <button
+                class="page-btn ${i === currentPage ? "active" : ""}"
+                onclick="changePage(${i})">
+                ${i}
+            </button>
+        `;
+    }
+
+    html += `
+        <button class="page-btn"
+                onclick="changePage(${currentPage + 1})"
+                ${currentPage === totalPages ? "disabled" : ""}>
+            →
+        </button>
+    `;
+
+    pagination.innerHTML = html;
+}
+
+//Отображение результатов 
 function showResult(data) {
     formDiv.style.display = "none";
     document.querySelector(".instructions").style.display = "none";
@@ -180,27 +296,40 @@ function showResult(data) {
         return;
     }
 
-    // === Вывод рейтинга квартир
-    data.ranking.forEach((apt, index) => {
-        const isTop = index === 0 ? "top1" : "";
+    // // === Вывод рейтинга квартир
+    // data.ranking.forEach((apt, index) => {
+    //     const isTop = index === 0 ? "top1" : "";
         
-        // Исправление: нормализуем процент к диапазону 0-100%
-        // Если score < 1, умножаем на 100; если уже в процентах — оставляем как есть
-        let scorePercent = apt.score * 100;
-        // if (scorePercent < 1) {
-        //     scorePercent = scorePercent * 100;
-        // }
+    //     // Исправление: нормализуем процент к диапазону 0-100%
+    //     // Если score < 1, умножаем на 100; если уже в процентах — оставляем как есть
+    //     let scorePercent = apt.score * 100;
+    //     // if (scorePercent < 1) {
+    //     //     scorePercent = scorePercent * 100;
+    //     // }
         
         
-        resultDiv.innerHTML += `
-            <div class="card ${isTop}">
-                <h3>${index + 1} место — ${apt.name}</h3>
-                <p><b>Адрес:</b> ${apt.address}</p>
-                <p><b>Оценка:</b> ${scorePercent.toFixed(1)}%</p>
-                <a href="${apt.url}" target="_blank">Открыть объявление</a>
-            </div>
-        `;
-    });
+    //     resultDiv.innerHTML += `
+    //         <div class="card ${isTop}">
+    //             <h3>${index + 1} место — ${apt.name}</h3>
+    //             <p><b>Адрес:</b> ${apt.address}</p>
+    //             <p><b>Оценка:</b> ${scorePercent.toFixed(1)}%</p>
+    //             <a href="${apt.url}" target="_blank">Открыть объявление</a>
+    //         </div>
+    //     `;
+    // });
+
+    currentRanking = data.ranking;
+    currentPage = 1;
+
+    resultDiv.innerHTML += `
+        <div id="rankingCards"></div>
+
+        <div id="pagination"
+            class="pagination">
+        </div>
+    `;
+
+    renderPage();
 
     
     resultDiv.innerHTML += `

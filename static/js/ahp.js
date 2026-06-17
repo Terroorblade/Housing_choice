@@ -1,17 +1,17 @@
 
-
 const criteria = [
-    "Цена за м²",
-    "Площадь",
-    "Тип жилья",
-    "Расстояние до детского сада",
-    "Расстояние до школы",
-    "Детская поликлиника",
-    "Взрослая поликлиника",
-    "Кружки и секции",
-    "Экология",
-    "Транспорт"
+    "Низкая цена за м²",           // cost — меньше = лучше
+    "Большая площадь",             // benefit — больше = лучше
+    "Новостройка",                  // benefit — 1 лучше 0
+    "Близость к детскому саду",    // cost — меньше расстояние = лучше
+    "Близость к школе",            // cost
+    "Близость к детской поликлинике", // cost
+    "Близость к взрослой поликлинике", // cost
+    "Кружки и секции в районе",   // benefit — больше = лучше
+    "Экология района",             // benefit
+    "Транспортная доступность"     // benefit
 ];
+
 
 // const filters = {
 //     max_price: document.getElementById("maxPrice").value ? Number(document.getElementById("maxPrice").value): null,
@@ -27,9 +27,7 @@ const criteria = [
 const formDiv = document.getElementById("form");
 const resultDiv = document.getElementById("result");
 
-// =========================
-// РАЙОНЫ
-// =========================
+//районы
 
 let selectedDistricts = [];
 
@@ -85,9 +83,7 @@ function removeDistrict(name) {
     renderDistricts();
 }
 
-// =========================
-// КАРТА РАЙОНОВ
-// =========================
+// районы карта
 
 const mapBtn =
     document.getElementById("showDistrictMapBtn");
@@ -109,6 +105,7 @@ function closeDistrictMap() {
 window.closeDistrictMap = closeDistrictMap;
 window.removeDistrict = removeDistrict;
 
+// сравнение пар критериев
 function generatePairs() {
   let pairs = [];
 
@@ -274,10 +271,10 @@ function restartTest() {
 
 
 function clarifyPreference(i, k, value) {
-    // Обновляем соответствующий элемент матрицы парных сравнений
+    // обновление соотв элемента матрицы парных сравнений
     const n = criteria.length;
 
-    // Определяем индекс пары (i, k)
+    // определение индекса пары (i, k)
     let pairIndex = 0;
     for (let a = 0; a < n; a++) {
         for (let b = a + 1; b < n; b++) {
@@ -292,10 +289,10 @@ function clarifyPreference(i, k, value) {
         }
     }
 
-    // Сохраняем ответы
+    // ответы
     localStorage.setItem("ahp_answers", JSON.stringify(answers));
 
-    // Повторный расчёт
+    // повторный расчёт
     submitData();
 }
 
@@ -408,6 +405,125 @@ async function saveSurvey() {
     alert("Опрос сохранён");
 }
 
+
+let currentPage = 1;
+const itemsPerPage = 8;
+let currentRanking = [];
+
+function changePage(page) {
+
+    const totalPages =
+        Math.ceil(currentRanking.length / itemsPerPage);
+
+    if (page < 1 || page > totalPages) return;
+
+    currentPage = page;
+
+    renderPage();
+}
+
+window.changePage = changePage;
+
+function renderPage() {
+
+    const cardsContainer =
+        document.getElementById("rankingCards");
+
+    if (!cardsContainer) return;
+
+    const start =
+        (currentPage - 1) * itemsPerPage;
+
+    const end =
+        start + itemsPerPage;
+
+    const pageItems =
+        currentRanking.slice(start, end);
+
+    cardsContainer.innerHTML = "";
+
+    pageItems.forEach((apt, localIndex) => {
+
+        const globalIndex =
+            start + localIndex;
+
+        const isTop =
+            globalIndex === 0 ? "top1" : "";
+
+        cardsContainer.innerHTML += `
+            <div class="card ${isTop}">
+                <h3>
+                    ${globalIndex + 1} место —
+                    ${apt.name}
+                </h3>
+
+                <p>
+                    <b>Адрес:</b>
+                    ${apt.address}
+                </p>
+
+                <p>
+                    <b>Оценка:</b>
+                    ${(apt.score * 100).toFixed(1)}%
+                </p>
+
+                <a href="${apt.url}" target="_blank">
+                    Открыть объявление
+                </a>
+            </div>
+        `;
+    });
+
+    renderPagination();
+}
+
+function renderPagination() {
+
+    const pagination =
+        document.getElementById("pagination");
+
+    if (!pagination) return;
+
+    const totalPages =
+        Math.ceil(currentRanking.length / itemsPerPage);
+
+    let html = `
+        <button
+            class="page-btn"
+            onclick="changePage(${currentPage - 1})"
+            ${currentPage === 1 ? "disabled" : ""}
+        >
+            ←
+        </button>
+    `;
+
+    for (let i = 1; i <= totalPages; i++) {
+
+        html += `
+            <button
+                class="page-btn ${i === currentPage ? "active" : ""}"
+                onclick="changePage(${i})"
+            >
+                ${i}
+            </button>
+        `;
+    }
+
+    html += `
+        <button
+            class="page-btn"
+            onclick="changePage(${currentPage + 1})"
+            ${currentPage === totalPages ? "disabled" : ""}
+        >
+            →
+        </button>
+    `;
+
+    pagination.innerHTML = html;
+}
+
+
+//вывод результатов
 //улучшение весов вариант 2
 
 function showResult(data) {
@@ -466,20 +582,31 @@ function showResult(data) {
 
         return;
     }
-
+    currentRanking = data.ranking;
+    currentPage = 1;
 
     // Вывод рейтинга квартир
-    data.ranking.forEach((apt, index) => {
-        const isTop = index === 0 ? "top1" : "";
-        resultDiv.innerHTML += `
-            <div class="card ${isTop}">
-                <h3>${index + 1} место — ${apt.name}</h3>
-                <p><b>Адрес:</b> ${apt.address}</p>
-                <p><b>Оценка:</b> ${(apt.score * 100).toFixed(1)}%</p>
-                <a href="${apt.url}" target="_blank">Открыть объявление</a>
-            </div>
-        `;
-    });
+    // data.ranking.forEach((apt, index) => {
+    //     const isTop = index === 0 ? "top1" : "";
+    //     resultDiv.innerHTML += `
+    //         <div class="card ${isTop}">
+    //             <h3>${index + 1} место — ${apt.name}</h3>
+    //             <p><b>Адрес:</b> ${apt.address}</p>
+    //             <p><b>Оценка:</b> ${(apt.score * 100).toFixed(1)}%</p>
+    //             <a href="${apt.url}" target="_blank">Открыть объявление</a>
+    //         </div>
+    //     `;
+    // });
+
+    resultDiv.innerHTML += `
+        <div id="rankingCards"></div>
+
+        <div id="pagination"
+            class="pagination">
+        </div>
+    `;
+
+    renderPage();
 
     // Кнопки редактирования
     resultDiv.innerHTML += `
@@ -506,9 +633,8 @@ function showResult(data) {
         </div>
     `;
 
-    // --- Уточняющий вопрос с "умными" подсказками ---
-    // --- Уточняющий вопрос с "умными" подсказками ---
-if (data.CR >= 0.15 && data.clarification && data.clarification.suggested_values.length > 0) {
+    // уточнение предпочтений - механизм повышения согласованности
+if (data.CR >= 0.2 && data.clarification && data.clarification.suggested_values.length > 0) {
 
     // Пояснения к шкале Саати
     const saatyLabels = {

@@ -1,497 +1,665 @@
-body {
-  font-family: Arial;
-  background: #f5f7fb;
-  margin: 0;
+/* ============================================
+   ДИЗАЙН-ТОКЕНЫ
+   ============================================ */
+:root {
+  /* Палитра: тёплый шалфей + крем + терракота */
+  --color-bg: #FAF7F0;           /* кремовый фон */
+  --color-surface: #FFFFFF;       /* карточки */
+  --color-surface-soft: #E8EDE3;  /* мягкий шалфейный фон */
+  --color-primary: #7C9885;       /* глубокий шалфей — основной акцент */
+  --color-primary-dark: #5F7A68;  /* шалфей темнее для hover */
+  --color-secondary: #D4C5B9;     /* тёплый таупе */
+  --color-accent: #C97B5C;        /* терракота — выбранные состояния */
+  --color-text: #3F4A41;          /* тёмно-зелёно-серый текст */
+  --color-text-soft: #7C8579;     /* приглушённый текст */
+  --color-border: #E3DED4;        /* мягкие границы */
+
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 4px 16px rgba(95, 122, 104, 0.08);
+  --shadow-lift: 0 8px 24px rgba(95, 122, 104, 0.14);
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
-/* главный контейнер */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ============================================
+   ОБЩИЙ КОНТЕЙНЕР
+   ============================================ */
 .container {
   max-width: 800px;
   margin: 40px auto;
-  padding: 20px;
+  padding: 0 20px 60px;
 }
 
 h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
   text-align: center;
-  margin-bottom: 30px;
+  margin: 30px 0 10px;
+  font-size: 2.1rem;
+  color: var(--color-text);
 }
 
-/* карточка вопроса */
+h1::after {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 3px;
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  margin: 14px auto 0;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ============================================
+   НАВИГАЦИЯ
+   ============================================ */
+.nav {
+  text-align: center;
+  padding: 16px 0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.nav button {
+  margin: 4px 6px;
+  padding: 10px 22px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav button:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   ИНСТРУКЦИЯ
+   ============================================ */
+.instructions {
+  background: var(--color-surface-soft);
+  padding: 22px 26px;
+  border-radius: var(--radius-lg);
+  margin: 24px auto 30px;
+  max-width: 600px;
+  box-shadow: var(--shadow-soft);
+}
+
+.instructions h2 {
+  text-align: center;
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+
+.instructions ul {
+  margin: 12px auto;
+  padding-left: 22px;
+}
+
+.instructions li {
+  margin-bottom: 4px;
+}
+
+.instructions p {
+  color: var(--color-text-soft);
+}
+
+/* ============================================
+   КАРТОЧКА ВОПРОСА (попарные сравнения / веса)
+   ============================================ */
 .pair {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-soft);
+  transition: box-shadow 0.2s ease;
 }
 
-/* текст по центру */
+.pair:hover {
+  box-shadow: var(--shadow-lift);
+}
+
 .pair-title {
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
   font-size: 16px;
+  font-weight: 500;
 }
 
-/* шкала НА ВСЮ ШИРИНУ */
+.pair-title b {
+  color: var(--color-primary-dark);
+  font-family: var(--font-display);
+}
+
+/* ============================================
+   ШКАЛА ОЦЕНКИ — пилюли
+   ============================================ */
 .scale {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  gap: 5px;
-}
-
-/* кнопки */
-.scale button {
-  height: 40px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-  transition: 0.2s;
-  font-weight: bold;
-}
-
-/* hover */
-.scale button:hover {
-  background: #e3f2fd;
-}
-
-/* выбранное */
-.scale button.selected {
-  background: #8b45e7;
-  color: white;
-  border: none;
-}
-
-/* кнопка отправки */
-#submitBtn {
-  display: block;
-  margin: 30px auto;
-  padding: 14px 30px;
-  font-size: 16px;
-  background: linear-gradient(135deg, #5ebe37, #69ce25);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-#submitBtn:hover {
-  transform: scale(1.05);
-}
-
-/* блок результатов */
-#result {
-  margin-top: 30px;
-  text-align: center;
-}
-
-/* карточка квартиры */
-.card {
-  background: white;
-  border-radius: 14px;
-  padding: 20px;
-  margin: 15px 0;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  text-align: left;
-}
-
-/* топ-1 */
-.top1 {
-  border: 2px solid gold;
-  background: #fffbe6;
-}
-
-/* кнопка редактирования */
-#editBtn {
-  margin-top: 25px;
-  padding: 12px 25px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #c76fe2, #db66b8);
-  color: white;
-  cursor: pointer;
-  font-size: 15px;
-  transition: 0.3s;
-}
-
-#editBtn:hover {
-  transform: scale(1.05);
-}
-
-.instructions {
-  background: #f1e9fd;
-  padding: 15px 20px;
-  border-radius: 12px;
-  margin-bottom: 30px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-  
-}
-.instructions h2 {
-  text-align: center;
-}
-.instructions ul {
-  max-width: 600px;
-  margin: 10px auto;
-  text-align: left;
-}
-
-.nav {
-  text-align: center;
-  margin-bottom: 20px;
-}
-.nav button {
-  margin: 5px;
-  padding: 10px 20px;
-  font-size: 14px;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #8d53eb, #c154ec);
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.nav button:hover {
-  transform: scale(1.05);
-}
-#restartBtn {
-  margin-bottom: 30px;
-  margin-left: 10px;
-  padding: 12px 25px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #9e9e9e, #616161);
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
-#restartBtn:hover {
-  transform: scale(1.05);
-}
-
-#saveSurvey {
-margin-bottom: 30px;
-  margin-left: 10px;
-  padding: 12px 25px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #4670cc, #5c49cc);
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-
-#saveSurvey:hover {
-  transform: scale(1.05);
-}
-
-.instructions {
-  max-width: 600px;
-  margin: 0 auto 30px auto;
-}
-/* Контейнер для кнопок уточнения */
-.clarify-container {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    flex-wrap: wrap;
-    margin-top: 15px;
-}
-/* Кнопки уточнения */
-.clarify-btn {
-    min-width: 90px;
-    padding: 12px 18px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #8d53eb, #c154ec);
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 15px;
-    transition: 0.3s;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.clarify-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-}
-
-/* Отображение значения CR */
-.cr-value {
-    font-size: 12px;
-    opacity: 0.9;
-}
-
-/* Улучшенные стили для фильтров */
-/* Исправленные стили для фильтров */
-.filter-section {
-  background: #f0e6f7; /* Фиолетовый фон, как у всего интерфейса */
-  border-radius: 12px;
-  padding: 25px;
-  margin-bottom: 25px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  border: 1px solid #e0e5f0;
-}
-
-.filter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-top: 15px;
-}
-
-.filter-item {
-  display: flex;
-  flex-direction: column;
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-label {
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #333;
-  font-size: 15px;
-}
-
-/* Ключевое исправление - ограничение ширины полей */
-input, select {
-  width: 100%;
-  max-width: 100%; /* Важно! */
-  padding: 12px 15px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  font-size: 14px;
-  box-sizing: border-box; /* Важно! */
-}
-
-/* Установка максимальной ширины для текстовых полей */
-input[type="number"] {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 12px 15px;
+  gap: 6px;
 }
 
 .scale.ftopsis {
   grid-template-columns: repeat(10, 1fr);
 }
 
+.scale button {
+  height: 42px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.18s ease;
+}
 
+.scale button:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-soft);
+}
+
+.scale button.selected {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 10px rgba(201, 123, 92, 0.35);
+}
+
+/* ============================================
+   ФИЛЬТРЫ
+   ============================================ */
+.filter-section {
+  background: var(--color-surface-soft);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-soft);
+}
+
+.filter-section h2 {
+  margin-top: 0;
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+input, select {
+  width: 100%;
+  max-width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  box-sizing: border-box;
+  color: var(--color-text);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(124, 152, 133, 0.15);
+}
+
+/* ============================================
+   КНОПКИ ДЕЙСТВИЙ
+   ============================================ */
+#submitBtn {
+  display: block;
+  margin: 30px auto;
+  padding: 15px 36px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow-soft);
+}
+
+#submitBtn:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+#editBtn, #restartBtn, #saveSurvey {
+  margin: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-family: var(--font-body);
+}
+
+#editBtn {
+  background: var(--color-secondary);
+  color: var(--color-text);
+}
+
+#restartBtn {
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+#saveSurvey {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+#editBtn:hover, #restartBtn:hover, #saveSurvey:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+/* кнопки уточнения CR */
+.clarify-container {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.clarify-btn {
+  min-width: 90px;
+  padding: 12px 18px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-accent);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.clarify-btn:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.cr-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* ============================================
+   РЕЗУЛЬТАТЫ / КАРТОЧКИ КВАРТИР
+   ============================================ */
+#result {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin: 14px 0;
+  box-shadow: var(--shadow-soft);
+  text-align: left;
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lift);
+}
+
+.card h3 {
+  font-family: var(--font-display);
+  margin-top: 0;
+  color: var(--color-primary-dark);
+}
+
+.card a {
+  color: var(--color-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.card a:hover {
+  text-decoration: underline;
+}
+
+.top1 {
+  border: 2px solid var(--color-accent);
+  background: linear-gradient(135deg, #FFF9F4, #FFFFFF);
+  position: relative;
+}
+
+.top1::before {
+  content: '★ Лучший вариант';
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+}
+
+/* ============================================
+   РАЙОНЫ
+   ============================================ */
 .district-filter {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .district-controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 #districtSelect {
-    min-width: 230px;
+  min-width: 230px;
 }
 
 #showDistrictMapBtn {
-    background: #4f46e5;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: 0.2s;
-    font-weight: 600;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: 0.2s;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 #showDistrictMapBtn:hover {
-    background: #4338ca;
-    transform: translateY(-1px);
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
 }
 
 .selected-districts {
-    margin-top: 14px;
-
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-
-    width: 100%;
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
 }
 
 .district-tag {
-    background: #eef2ff;
-    color: #544cc0;
-
-    border-radius: 999px;
-
-    padding: 8px 14px;
-
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    font-size: 14px;
-    font-weight: 500;
+  background: var(--color-surface-soft);
+  color: var(--color-primary-dark);
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .remove-district {
-    cursor: pointer;
-    border: none;
-    background: transparent;
-
-    color: #443da8;
-
-    font-size: 16px;
-    font-weight: bold;
-
-    transition: 0.2s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 16px;
+  font-weight: bold;
+  transition: 0.2s;
 }
 
 .remove-district:hover {
-    color: #dc2626;
-    transform: scale(1.15);
+  transform: scale(1.15);
 }
 
-/* =========================
+/* ============================================
    МОДАЛКА КАРТЫ
-========================= */
-
+   ============================================ */
 .district-modal {
-    position: fixed;
-    inset: 0;
-
-    background: rgba(0,0,0,0.65);
-
-    display: none;
-
-    align-items: center;
-    justify-content: center;
-
-    z-index: 9999;
+  position: fixed;
+  inset: 0;
+  background: rgba(63, 74, 65, 0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
 
 .district-modal.active {
-    display: flex;
+  display: flex;
 }
 
 .district-modal-content {
-    background: white;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 900px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+  animation: modalFade 0.25s ease;
+}
 
-    border-radius: 20px;
-
-    padding: 24px;
-
-    max-width: 900px;
-    width: 90%;
-
-    text-align: center;
-
-    position: relative;
-
-    animation: modalFade 0.25s ease;
+.district-modal-content h3 {
+  font-family: var(--font-display);
+  margin-top: 0;
 }
 
 .district-map-image {
-    width: 100%;
-    max-height: 75vh;
-
-    object-fit: contain;
-
-    border-radius: 16px;
-
-    margin-top: 16px;
+  width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  margin-top: 16px;
 }
 
 .close-modal {
-    position: absolute;
-
-    right: 16px;
-    top: 16px;
-
-    border: none;
-    background: #ef4444;
-
-    color: white;
-
-    width: 36px;
-    height: 36px;
-
-    border-radius: 50%;
-
-    cursor: pointer;
-
-    font-size: 16px;
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  border: none;
+  background: var(--color-accent);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
 }
 
 .close-modal:hover {
-    background: #dc2626;
-}
-/* =========================
-   РАЙОНЫ
-========================= */
-
-.district-controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.selected-districts {
-    margin-top: 12px;
-
-    display: flex;
-    flex-wrap: wrap;
-
-    gap: 8px;
-}
-
-.district-tag {
-    background: #efe2f5;
-    color: rgb(0, 0, 0);
-
-    padding: 6px 12px;
-
-    border-radius: 999px;
-
-    display: flex;
-    align-items: center;
-    font-weight: 550 ;
-    gap: 8px;
-
-    font-size: 14px;
-}
-
-.remove-district {
-    cursor: pointer;
-    font-weight: bold;
+  background: var(--color-primary-dark);
 }
 
 @keyframes modalFade {
-    from {
-        opacity: 0;
-        transform: scale(0.92);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
-/* Адаптивность для мобильных */
+/* ============================================
+   АДАПТИВНОСТЬ
+   ============================================ */
 @media (max-width: 600px) {
   .filter-grid {
     grid-template-columns: 1fr;
   }
+  .scale {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .scale.ftopsis {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  h1 {
+    font-size: 1.6rem;
+  }
 }
 
+/* =========================
+   Пагинация результатов
+   ========================= */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 24px 0;
+    flex-wrap: wrap;
+}
+
+.pagination button {
+    min-width: 40px;
+    height: 40px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.pagination button:hover {
+    background: var(--color-surface-soft);
+}
+
+.pagination button.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* =========================
+   Раскрывающиеся опросы
+   ========================= */
+
+.saved-toggle {
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+
+    padding: 8px 0;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.saved-toggle::after {
+    content: "▼";
+    float: right;
+    transition: 0.2s;
+}
+
+.saved-toggle.active::after {
+    transform: rotate(180deg);
+}
+.saved-toggle.ahp {
+    color: #8C7363;
+    border-bottom: 2px solid #8C7363;
+}
+
+.saved-toggle.ftopsis {
+    color: #8C7363;
+    border-bottom: 2px solid #B79C8A;
+}
+
+.saved-toggle.electre {
+    color: var(--color-accent);
+    border-bottom: 2px solid var(--color-accent);
+}
+
+.saved-content {
+    display: none;
+    margin-top: 12px;
+}
+
+.saved-content.open {
+    display: block;
+}
