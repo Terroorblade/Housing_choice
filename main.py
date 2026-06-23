@@ -6,7 +6,7 @@ import numpy as np
 from models.ahp import ahp as ahp_calc, consistency_ratio, find_most_inconsistent_triplet
 from models.ftopsis import ftopsis
 from models.electre import electre
-from data.apartments import apartments
+# from data.apartments import apartments
 from fastapi.staticfiles import StaticFiles
 from models.ahp import consistency_ratio
 from pydantic import BaseModel
